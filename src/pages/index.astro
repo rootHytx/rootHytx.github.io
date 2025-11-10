@@ -358,9 +358,24 @@ const serializedUtilitiesData = JSON.stringify(utilitiesData);
 				background-color: rgba(0, 0, 0, 0.8);
 				border: 1px solid #333;
 				padding: 10px;
-				/* Show terminal output by default; JS may toggle visibility via classes but default should be visible */
 				display: block;
 				box-sizing: border-box;
+				/* Custom scrollbar to match utilities area */
+				scrollbar-width: thin;
+				scrollbar-color: #e79cfe #000000;
+			}
+			.terminal .terminal-output::-webkit-scrollbar {
+				width: 8px;
+			}
+			.terminal .terminal-output::-webkit-scrollbar-track {
+				background: #000000;
+			}
+			.terminal .terminal-output::-webkit-scrollbar-thumb {
+				background: #e79cfe;
+				border-radius: 4px;
+			}
+			.terminal .terminal-output::-webkit-scrollbar-thumb:hover {
+				background: #d18bf5;
 			}
 
 			/* Input area (real-terminal) anchored to the bottom of the .terminal container */
