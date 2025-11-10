@@ -8,7 +8,8 @@
     "start": "astro dev",
     "build": "astro check && astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "verify": "echo \"Verifying build configuration...\" && node -e \"console.log('✓ Node.js version:', process.version)\" && npm run build && echo \"✓ Build completed successfully\""
   },
   "dependencies": {
     "astro": "^4.0.0"

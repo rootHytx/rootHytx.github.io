@@ -1,0 +1,82 @@
+---
+// 404 page
+---
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>404 - Page Not Found</title>
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+
+			body {
+				background-color: #000000;
+				color: #e79cfe;
+				font-family: 'Courier New', monospace;
+				font-size: 16px;
+				line-height: 1.4;
+				overflow: hidden;
+				height: 100vh;
+				display: flex;
+				flex-direction: column;
+				justify-content: center;
+				align-items: center;
+				padding: 20px;
+				text-align: center;
+			}
+
+			.error-code {
+				font-size: 4rem;
+				font-weight: bold;
+				margin-bottom: 1rem;
+			}
+
+			.error-message {
+				font-size: 1.2rem;
+				margin-bottom: 2rem;
+			}
+
+			.terminal-link {
+				color: #e79cfe;
+				text-decoration: none;
+				border-bottom: 1px solid #e79cfe;
+				padding-bottom: 2px;
+				transition: color 0.2s ease;
+			}
+
+			.terminal-link:hover {
+				color: #ffffff;
+				border-bottom-color: #ffffff;
+			}
+
+			.cursor {
+				display: inline-block;
+				width: 8px;
+				height: 16px;
+				background-color: #e79cfe;
+				animation: blink 1s infinite;
+				vertical-align: middle;
+			}
+
+			@keyframes blink {
+				0%, 50% { opacity: 1; }
+				51%, 100% { opacity: 0; }
+			}
+		</style>
+	</head>
+	<body>
+		<div class="error-code">404</div>
+		<div class="error-message">
+			Page not found<span class="cursor"></span>
+		</div>
+		<div>
+			<a href="/" class="terminal-link">Return to terminal</a>
+		</div>
+	</body>
+</html>
