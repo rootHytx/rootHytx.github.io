@@ -1,0 +1,166 @@
+---
+// Page metadata
+---
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>root/hytx</title>
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+
+			body {
+				background-color: #000000;
+				color: #e79cfe;
+				font-family: 'Courier New', monospace;
+				font-size: 16px;
+				line-height: 1.4;
+				overflow: hidden;
+				height: 100vh;
+				display: flex;
+				flex-direction: column;
+				padding: 20px;
+			}
+
+			.terminal {
+				flex: 1;
+				display: flex;
+				flex-direction: column;
+			}
+
+			.header {
+				margin-bottom: 20px;
+				display: flex;
+				align-items: center;
+				gap: 8px;
+			}
+
+			.username {
+				font-weight: bold;
+				color: #e79cfe;
+			}
+
+			.cursor {
+				display: inline-block;
+				width: 8px;
+				height: 16px;
+				background-color: #e79cfe;
+				animation: blink 1s infinite;
+				vertical-align: middle;
+			}
+
+			@keyframes blink {
+				0%, 50% { opacity: 1; }
+				51%, 100% { opacity: 0; }
+			}
+
+			.directory-listing {
+				display: flex;
+				flex-direction: column;
+				gap: 8px;
+			}
+
+			.directory-item {
+				display: flex;
+				align-items: center;
+				gap: 8px;
+				padding: 4px 0;
+				cursor: pointer;
+				transition: color 0.2s ease;
+			}
+
+			.directory-item:hover {
+				color: #ffffff;
+			}
+
+			.folder-icon {
+				color: #e79cfe;
+			}
+
+			.project-name {
+				color: #e79cfe;
+			}
+
+			.footer {
+				margin-top: auto;
+				padding-top: 20px;
+				color: #666;
+				font-size: 14px;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="terminal">
+			<div class="header">
+				<span class="username">root/hytx</span>
+				<span class="cursor"></span>
+			</div>
+
+			<div class="directory-listing">
+				<div class="directory-item" onclick="window.open('https://github.com/rootHytx/sistemas-embutidos', '_blank')">
+					<span class="folder-icon">📁</span>
+					<span class="project-path">/root/sistemas-embutidos</span>
+				</div>
+				<div class="directory-item" onclick="window.open('https://github.com/rootHytx/bloccChainz', '_blank')">
+					<span class="folder-icon">📁</span>
+					<span class="project-path">/root/bloccChainz</span>
+				</div>
+				<div class="directory-item" onclick="window.open('https://github.com/rootHytx/trabalho-redes', '_blank')">
+					<span class="folder-icon">📁</span>
+					<span class="project-path">/root/trabalho-redes</span>
+				</div>
+				<div class="directory-item" onclick="window.open('https://github.com/rootHytx', '_blank')">
+					<span class="folder-icon">📁</span>
+					<span class="project-path">/root/github</span>
+				</div>
+			</div>
+
+			<div class="footer">
+				<span>Type 'help' for available commands</span>
+			</div>
+		</div>
+
+		<script>
+			// Add keyboard navigation
+			document.addEventListener('keydown', (e) => {
+				const items = document.querySelectorAll('.directory-item');
+				let currentIndex = -1;
+
+				// Find current focused item
+				items.forEach((item, index) => {
+					if (item.style.color === 'rgb(255, 255, 255)') {
+						currentIndex = index;
+					}
+				});
+
+				if (e.key === 'ArrowDown') {
+					e.preventDefault();
+					const nextIndex = (currentIndex + 1) % items.length;
+					items.forEach(item => item.style.color = '');
+					items[nextIndex].style.color = '#ffffff';
+				} else if (e.key === 'ArrowUp') {
+					e.preventDefault();
+					const prevIndex = currentIndex <= 0 ? items.length - 1 : currentIndex - 1;
+					items.forEach(item => item.style.color = '');
+					items[prevIndex].style.color = '#ffffff';
+				} else if (e.key === 'Enter' && currentIndex >= 0) {
+					items[currentIndex].click();
+				}
+			});
+
+			// Focus first item by default
+			document.addEventListener('DOMContentLoaded', () => {
+				const firstItem = document.querySelector('.directory-item');
+				if (firstItem) {
+					firstItem.style.color = '#ffffff';
+				}
+			});
+		</script>
+	</body>
+</html>

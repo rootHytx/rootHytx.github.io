@@ -1,0 +1,20 @@
+{
+  "name": "roothytx-github-io",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "Personal portfolio site with terminal theme",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro check && astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "astro": "^4.0.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.3.1",
+    "typescript": "^5.0.0"
+  }
+}
