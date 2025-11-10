@@ -1,6 +1,66 @@
 ---
+import { getCollection } from 'astro:content';
+import { Markdown } from '@astropub/md'
 // Page metadata
+
+// Load utilities markdown modules directly and extract rendered HTML for inline embedding.
+// We use import.meta.glob with eager:true so the markdown modules are available at build time.
+const modules = import.meta.glob('../content/utilities/*.md', { eager: true });
+const utilitiesData = [];
+
+for (const path in modules) {
+	const mod = modules[path];
+	const fileName = path.split('/').pop();
+	const id = fileName.replace(/\.md$/i, '');
+	let content = '';
+
+	// Try common ways markdown import exposes compiled HTML:
+	// 1) compiledContent() function (some setups)
+	if (mod && typeof mod.compiledContent === 'function') {
+		try { content = await mod.compiledContent(); } catch (e) { /* ignore */ }
+	}
+
+	// 2) compiled string export
+	if (!content && typeof mod.compiled === 'string') {
+		content = mod.compiled;
+	}
+
+	// 3) module-level render() returning { html } (some Astro setups)
+	if (!content && mod && typeof mod.render === 'function') {
+		try {
+			const r = await mod.render();
+			if (r && typeof r.html === 'string') content = r.html;
+		} catch (e) { /* ignore */ }
+	}
+
+	// 4) default component with render() (fallback)
+	if (!content && mod && mod.default && typeof mod.default.render === 'function') {
+		try {
+			const r = await mod.default.render();
+			if (r && typeof r.html === 'string') content = r.html;
+		} catch (e) { /* ignore */ }
+	}
+
+	// 5) fallback to rawContent / raw export if available
+	if (!content && typeof mod.rawContent === 'string') {
+		content = mod.rawContent;
+	}
+
+	// Push normalized entry
+	utilitiesData.push({
+		id,
+		title: (mod && mod.frontmatter && mod.frontmatter.title) || id,
+		description: (mod && mod.frontmatter && mod.frontmatter.description) || '',
+		category: (mod && mod.frontmatter && mod.frontmatter.category) || '',
+		content
+	});
+}
+
+// Serialize utilities data for client-side (kept for compatibility, but client uses embedded HTML)
+const serializedUtilitiesData = JSON.stringify(utilitiesData);
 ---
+
+
 
 <html lang="en">
 	<head>
@@ -21,27 +81,43 @@
 				font-family: 'Courier New', monospace;
 				font-size: 16px;
 				line-height: 1.4;
-				overflow: hidden;
-				height: 100vh;
-				display: flex;
-				flex-direction: column;
-				padding: 20px;
+				/* overall page uses full viewport height; layout splits into two areas using vh */
+				min-height: 100vh;
+				margin: 0;
+				display: block;
 			}
 
-			.terminal {
+			.content {
 				flex: 1;
 				display: flex;
 				flex-direction: column;
+				align-items: center;
+				text-align: center;
+				max-width: 800px;
+				width: 100%;
+				margin: 0 auto;
+				padding: 2vh 0 0 0;
+			}
+
+			.content-area {
+				width: 100%;
+				/* main content takes 70vh of the viewport */
+				height: 70vh;
+				position: relative;
+				overflow: auto;
+				box-sizing: border-box;
 			}
 
 			.header {
-				margin-bottom: 20px;
+				margin-bottom: 30px;
 				display: flex;
 				align-items: center;
 				gap: 8px;
+				justify-content: center;
 			}
 
 			.username {
+				font-size: 26px;
 				font-weight: bold;
 				color: #e79cfe;
 			}
@@ -64,23 +140,181 @@
 				display: flex;
 				flex-direction: column;
 				gap: 8px;
+				align-items: flex-start;
+				width: fit-content;
+				margin: 0 auto;
+			}
+
+			.utility-content {
+				width: 100%;
+				text-align: left;
+				display: none;
+				/* Fill the available area inside the content-area (70vh) */
+				position: absolute;
+				top: 0;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				background-color: #000000;
+				z-index: 10;
+				overflow-y: auto;
+				padding: 20px;
+				/* Custom scrollbar */
+				scrollbar-width: thin;
+				scrollbar-color: #e79cfe #000000;
+				box-sizing: border-box;
+			}
+
+			.utility-content::-webkit-scrollbar {
+				width: 8px;
+			}
+
+			.utility-content::-webkit-scrollbar-track {
+				background: #000000;
+			}
+
+			.utility-content::-webkit-scrollbar-thumb {
+				background: #e79cfe;
+				border-radius: 4px;
+			}
+
+			.utility-content::-webkit-scrollbar-thumb:hover {
+				background: #d18bf5;
+			}
+
+			.utility-content.active {
+				display: block;
+			}
+
+			.utility-content-inner {
+				/* main content area inner container */
+				max-width: 960px;
+				margin: 0 auto;
+				padding: 20px;
+			}
+
+			.utility-content h1,
+			.utility-content h2,
+			.utility-content h3 {
+				color: #e79cfe;
+				margin: 20px 0 10px 0;
+				font-family: 'Courier New', monospace;
+			}
+
+			.utility-content h1 {
+				font-size: 24px;
+				border-bottom: 1px solid #333;
+				padding-bottom: 10px;
+			}
+
+			.utility-content h2 {
+				font-size: 20px;
+			}
+
+			.utility-content h3 {
+				font-size: 18px;
+			}
+
+			.utility-content p {
+				color: #e79cfe;
+				line-height: 1.6;
+				margin: 10px 0;
+				font-family: 'Courier New', monospace;
+			}
+
+			.utility-content .code-block {
+				background-color: #1a1a1a;
+				border: 1px solid #333;
+				padding: 15px;
+				border-radius: 4px;
+				font-family: 'Courier New', monospace;
+				font-size: 14px;
+				line-height: 1.4;
+				color: #e79cfe;
+				overflow-x: auto;
+				margin: 15px 0;
+				white-space: pre-wrap;
+			}
+
+			.utility-content .section {
+				margin: 20px 0;
+			}
+
+			.utility-content .section-title {
+				color: #e79cfe;
+				font-weight: bold;
+				font-size: 18px;
+				margin-bottom: 10px;
+				font-family: 'Courier New', monospace;
+			}
+
+			.utility-content .description {
+				color: #e79cfe;
+				line-height: 1.6;
+				margin-bottom: 15px;
+				font-family: 'Courier New', monospace;
+			}
+
+			.utility-content .back-link {
+				color: #e79cfe;
+				text-decoration: none;
+				border-bottom: 1px solid #e79cfe;
+				padding-bottom: 2px;
+				transition: color 0.2s ease;
+				margin-top: auto;
+				width: fit-content;
+				display: inline-block;
+				margin-bottom: 20px;
+			}
+
+			.utility-content .back-link:hover {
+				color: #ffffff;
+				border-bottom-color: #ffffff;
+			}
+
+			.back-button {
+				color: #e79cfe;
+				text-decoration: none;
+				border-bottom: 1px solid #e79cfe;
+				padding-bottom: 2px;
+				transition: color 0.2s ease;
+				cursor: pointer;
+				margin-bottom: 20px;
+				display: inline-block;
+			}
+
+			.back-button:hover {
+				color: #ffffff;
+				border-bottom-color: #ffffff;
+			}
+
+			.directory-path {
+				color: #e79cfe;
+				font-family: 'Courier New', monospace;
+				font-size: 16px;
+				margin-bottom: 8px;
+				text-align: left;
 			}
 
 			.directory-item {
 				display: flex;
 				align-items: center;
-				gap: 8px;
-				padding: 4px 0;
+				gap: 4px;
+				padding: 4px 16px;
 				cursor: pointer;
 				transition: color 0.2s ease;
+				justify-content: flex-start;
+				width: 100%;
 			}
 
-			.directory-item:hover {
+			.directory-item:hover,
+			.directory-item.selected {
 				color: #ffffff;
 			}
 
 			.folder-icon {
 				color: #e79cfe;
+				font-family: monospace;
 			}
 
 			.project-name {
@@ -88,79 +322,588 @@
 			}
 
 			.footer {
-				margin-top: auto;
+				margin-top: 30px;
 				padding-top: 20px;
 				color: #666;
 				font-size: 14px;
+				text-align: center;
 			}
+
+			/* Terminal container (fixed to bottom). All terminal-related children (output and the input area)
+			   are scoped under this .terminal wrapper so content does not leak into terminal area. */
+			.terminal {
+				position: fixed;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				height: 30vh; /* reserved vertical space for the terminal */
+				display: flex;
+				flex-direction: column;
+				justify-content: space-between;
+				background-color: #000000;
+				z-index: 1000;
+				box-sizing: border-box;
+			}
+
+			/* Terminal output sits above the input area inside the terminal container and scrolls independently */
+			.terminal .terminal-output {
+				position: absolute;
+				top: 10px;
+				left: 20px;
+				right: 20px;
+				bottom: 0px;
+				/* leave room for the input area at the bottom of the terminal */
+				max-height: calc(30vh - 90px);
+				overflow-y: auto;
+				background-color: rgba(0, 0, 0, 0.8);
+				border: 1px solid #333;
+				padding: 10px;
+				/* Show terminal output by default; JS may toggle visibility via classes but default should be visible */
+				display: block;
+				box-sizing: border-box;
+			}
+
+			/* Input area (real-terminal) anchored to the bottom of the .terminal container */
+			.terminal .real-terminal {
+				position: absolute;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				height: 70px; /* fixed input area height within the terminal */
+				background-color: #000000;
+				border-top: 1px solid #333;
+				padding: 12px 20px;
+				display: flex;
+				align-items: center;
+				gap: 8px;
+				font-family: 'Courier New', monospace;
+				font-size: 16px;
+				box-sizing: border-box;
+			}
+
+			.terminal-prompt {
+				color: #e79cfe;
+				font-weight: bold;
+				white-space: nowrap;
+			}
+
+			.terminal-input {
+				background: transparent;
+				border: none;
+				color: #bbb;
+				font-family: 'Courier New', monospace;
+				font-size: 16px;
+				outline: none;
+				flex: 1;
+				caret-color: #e79cfe;
+			}
+
+			.terminal-input::placeholder {
+				color: #666;
+			}
+
+			/* .terminal-output active rule removed — terminal output is visible by default inside .terminal */
+
+			.terminal-line {
+				color: #e79cfe;
+				line-height: 1.4;
+				margin-bottom: 4px;
+				white-space: pre-wrap;
+			}
+
+			.terminal-command {
+				color: #00ff00;
+			}
+
+
 		</style>
 	</head>
 	<body>
-		<div class="terminal">
+
+		<div class="content">
 			<div class="header">
 				<span class="username">root/hytx</span>
 				<span class="cursor"></span>
 			</div>
 
-			<div class="directory-listing">
-				<div class="directory-item" onclick="window.open('https://github.com/rootHytx/sistemas-embutidos', '_blank')">
-					<span class="folder-icon">📁</span>
-					<span class="project-path">/root/sistemas-embutidos</span>
+			<div class="content-area">
+				<div id="directory-view">
+					<div class="directory-path">/root/github-projects</div>
+					<div class="directory-listing">
+						<div class="directory-item" data-type="project" data-url="https://github.com/rootHytx/sistemas-embutidos" data-content-length="0">
+							<span class="folder-icon">└─</span>
+							<span class="project-path">/root/github-projects/sistemas-embutidos</span>
+						</div>
+						<div class="directory-item" data-type="project" data-url="https://github.com/rootHytx/bloccChainz" data-content-length="0">
+							<span class="folder-icon">└─</span>
+							<span class="project-path">/root/github-projects/bloccChainz</span>
+						</div>
+						<div class="directory-item" data-type="project" data-url="https://github.com/rootHytx/trabalho-redes" data-content-length="0">
+							<span class="folder-icon">└─</span>
+							<span class="project-path">/root/github-projects/trabalho-redes</span>
+						</div>
+						<div class="directory-item" data-type="project" data-url="https://github.com/rootHytx" data-content-length="0">
+							<span class="folder-icon">└─</span>
+							<span class="project-path">/root/github-projects/github</span>
+						</div>
+					</div>
+
+					<div class="directory-path" style="margin-top: 30px;">/root/utilities</div>
+					{utilitiesData.map((u) => (
+						<div class="directory-item" data-type="utility" data-url={u.id.replace(/\.md$/i, '')} data-content-length={u.content ? u.content.length : 0}>
+							<span class="folder-icon">└─</span>
+							<span class="project-path">{`/root/utilities/${u.id.replace(/\.md$/i, '')}`}</span>
+							<!-- Hidden inline copy of the rendered markdown HTML (server-rendered). Inject raw HTML with set:html -->
+							<div class="item-content" style="display:none;" set:html={u.content}></div>
+						</div>
+					))}
 				</div>
-				<div class="directory-item" onclick="window.open('https://github.com/rootHytx/bloccChainz', '_blank')">
-					<span class="folder-icon">📁</span>
-					<span class="project-path">/root/bloccChainz</span>
-				</div>
-				<div class="directory-item" onclick="window.open('https://github.com/rootHytx/trabalho-redes', '_blank')">
-					<span class="folder-icon">📁</span>
-					<span class="project-path">/root/trabalho-redes</span>
-				</div>
-				<div class="directory-item" onclick="window.open('https://github.com/rootHytx', '_blank')">
-					<span class="folder-icon">📁</span>
-					<span class="project-path">/root/github</span>
+
+				<div id="utility-view" class="utility-content">
+					<div class="utility-content-inner">
+						<div class="back-button" id="back-button">← Back to directory</div>
+						<div id="utility-content"></div>
+					</div>
 				</div>
 			</div>
+		</div>
 
-			<div class="footer">
-				<span>Type 'help' for available commands</span>
+		<div class="footer">
+			<span>Press ESC to toggle keyboard input focus</span>
+		</div>
+
+		<div class="terminal">
+			<div class="terminal-output" id="terminal-output"></div>
+
+			<div class="real-terminal">
+				<div class="terminal-prompt">[rootHytx@github.io: ~]$</div>
+				<input type="text" class="terminal-input" id="terminal-input" placeholder="Type commands here...">
 			</div>
 		</div>
 
 		<script>
-			// Add keyboard navigation
-			document.addEventListener('keydown', (e) => {
-				const items = document.querySelectorAll('.directory-item');
-				let currentIndex = -1;
+			// Simple command system
+			document.addEventListener('DOMContentLoaded', function() {
+				let isInputFocused = true; // Start with input focused
+				const terminalOutput = document.getElementById('terminal-output');
+				const terminalInput = document.getElementById('terminal-input');
+				const directoryListing = document.querySelector('.directory-listing');
+				const directoryPath = document.querySelector('.directory-path');
+				const footer = document.querySelector('.footer');
 
-				// Find current focused item
-				items.forEach((item, index) => {
-					if (item.style.color === 'rgb(255, 255, 255)') {
-						currentIndex = index;
+				// Directory structure
+				const fileSystem = {
+					'github-projects': {
+						'sistemas-embutidos': { type: 'project', url: 'https://github.com/rootHytx/sistemas-embutidos' },
+						'bloccChainz': { type: 'project', url: 'https://github.com/rootHytx/bloccChainz' },
+						'trabalho-redes': { type: 'project', url: 'https://github.com/rootHytx/trabalho-redes' },
+						'github': { type: 'project', url: 'https://github.com/rootHytx' }
+					},
+					'utilities': {
+						'utility-belt': { type: 'utility', url: 'utility-belt' },
+						'proxmox-lxc-boot': { type: 'utility', url: 'proxmox-lxc-boot' },
+						'certificate-generation': { type: 'utility', url: 'certificate-generation' },
+						'docker-install': { type: 'utility', url: 'docker-install' },
+						'rootless-docker': { type: 'utility', url: 'rootless-docker' }
+					}
+				};
+
+				// Utility content cache
+				const utilityContent = {};
+				let currentUtility = null;
+
+				let currentDirectory = '~';
+
+				// Command definitions
+				const commands = {
+					help: function() {
+						return `
+Available commands:
+- help: Show this help message
+- ls: List files in current directory
+- cd [directory]: Navigate to directory
+- cat [file]: Read file contents
+- clear: Clear the terminal
+- pwd: Show current directory
+						`;
+					},
+					ls: function() {
+							if (currentDirectory === '~') {
+								return 'github-projects/\nutilities/';
+							} else if (currentDirectory === 'github-projects') {
+								return 'sistemas-embutidos\nbloccChainz\ntrabalho-redes\ngithub';
+							} else if (currentDirectory === 'utilities') {
+								return 'utility-belt\nproxmox-lxc-boot\ncertificate-generation\ndocker-install\nrootless-docker';
+							}
+							return '';
+						},
+					cd: function(dir) {
+						if (!dir) {
+							currentDirectory = '~';
+							return '';
+						}
+
+						if (dir === '..' || dir === '../') {
+							currentDirectory = '~';
+							return '';
+						}
+
+						if (dir === 'github-projects' || dir === 'utilities') {
+							currentDirectory = dir;
+							return '';
+						}
+
+						return `cd: ${dir}: No such directory`;
+					},
+					cat: function(file) {
+						if (!file) {
+							return 'Usage: cat [filename]';
+						}
+
+						if (currentDirectory === 'github-projects') {
+							const project = fileSystem['github-projects'][file];
+							if (project) {
+								// Open the project URL
+								window.open(project.url, '_blank');
+								return `Opening ${file}...`;
+							}
+						} else if (currentDirectory === 'utilities') {
+							const utility = fileSystem['utilities'][file];
+							if (utility) {
+								// Load utility content in-place
+								loadUtility(file);
+								return `Loading ${file}...`;
+							}
+						}
+
+						return `cat: ${file}: No such file`;
+					},
+					pwd: function() {
+						return currentDirectory === '~' ? '/root' : `/root/${currentDirectory}`;
+					},
+					clear: function() {
+						terminalOutput.innerHTML = '';
+						return '';
+					}
+				};
+
+				// Execute command
+				function executeCommand(input) {
+					const parts = input.trim().split(' ');
+					const command = parts[0].toLowerCase();
+					const args = parts.slice(1);
+
+					if (commands[command]) {
+						const result = commands[command](...args);
+						if (result) {
+							terminalOutput.innerHTML += '<div class="terminal-line">' + result.replace(/\n/g, '<br>') + '</div>';
+						}
+					} else if (input.trim()) {
+						terminalOutput.innerHTML += '<div class="terminal-line">Command not found: ' + command + '. Type "help" for available commands.</div>';
+					}
+
+					terminalOutput.scrollTop = terminalOutput.scrollHeight;
+				}
+
+				// Toggle input focus
+				function toggleInputFocus() {
+					isInputFocused = !isInputFocused;
+
+					if (isInputFocused) {
+						terminalInput.focus();
+						terminalInput.placeholder = "Type commands here...";
+					} else {
+						terminalInput.blur();
+						terminalInput.placeholder = "Press ESC to focus input...";
+					}
+				}
+
+				// Load utility content (robust to different shapes/formats of injected utilities data)
+				async function loadUtility(utilityName) {
+					// Normalize the incoming name: strip a trailing .md if present so lookups match ids like "utility-belt"
+					let normalizedName = (utilityName || '').toString();
+					if (normalizedName.toLowerCase().endsWith('.md')) {
+						normalizedName = normalizedName.replace(/\.md$/i, '');
+					}
+
+					currentUtility = normalizedName;
+					const directoryView = document.getElementById('directory-view');
+					const utilityView = document.getElementById('utility-view');
+					const utilityContentDiv = document.getElementById('utility-content');
+
+					// Switch views
+					directoryView.style.display = 'none';
+					utilityView.classList.add('active');
+
+					try {
+						// Normalize possible shapes for window.utilitiesData:
+						// - already an array of utilities
+						// - a JSON string
+						// - an object with property 'serializedUtilitiesData' that is a JSON string
+						// - an object with property 'utilities' which is an array
+						// - an object mapping ids -> utility objects
+						let utils = window.utilitiesData;
+
+						// If a JSON string was injected (double-encoded), try to parse
+						if (typeof utils === 'string') {
+							try { utils = JSON.parse(utils); } catch (e) { /* ignore parse error */ }
+						}
+
+						// If the server injected an object wrapper { serializedUtilitiesData: [...] }
+						if (utils && typeof utils === 'object' && typeof utils.serializedUtilitiesData === 'string') {
+							try { utils = JSON.parse(utils.serializedUtilitiesData); } catch (e) { /* ignore */ }
+						}
+
+						// If it's an object with .utilities array, use that
+						if (utils && typeof utils === 'object' && Array.isArray(utils.utilities)) {
+							utils = utils.utilities;
+						}
+
+						// Resolve utility entry whether utils is array or map. Accept either the normalized name
+						// or the original incoming name for maximum compatibility.
+						let utilityData = null;
+						if (Array.isArray(utils)) {
+							utilityData = utils.find(u => {
+								// common possible id/name fields
+								if (!u) return false;
+								const uId = (u.id || u.slug || (u.data && u.data.id) || '').toString();
+								return uId === normalizedName || uId === utilityName;
+							});
+						} else if (utils && typeof utils === 'object') {
+							// object keyed by id (or slug)
+							if (utils[normalizedName]) {
+								utilityData = utils[normalizedName];
+							} else if (utils[utilityName]) {
+								utilityData = utils[utilityName];
+							} else {
+								// fallback: first object value that matches id/slug
+								utilityData = Object.values(utils).find(u => {
+									if (!u) return false;
+									const uId = (u.id || u.slug || (u.data && u.data.id) || '').toString();
+									return uId === normalizedName || uId === utilityName;
+								});
+							}
+						}
+
+						// Attempt to normalize content HTML from different shapes
+						let contentHtml = null;
+						if (utilityData) {
+							// direct html/content fields
+							if (typeof utilityData.content === 'string') {
+								contentHtml = utilityData.content;
+							} else if (typeof utilityData.html === 'string') {
+								contentHtml = utilityData.html;
+							} else if (typeof utilityData.body === 'string') {
+								contentHtml = utilityData.body;
+							} else if (utilityData.render && typeof utilityData.render === 'function') {
+								// some Astro content objects provide a render() returning { html, css, ... }
+								try {
+									const rendered = utilityData.render();
+									if (rendered && typeof rendered.html === 'string') {
+										contentHtml = rendered.html;
+									}
+								} catch (e) {
+									// ignore render errors
+								}
+							} else if (utilityData.data && typeof utilityData.data.content === 'string') {
+								contentHtml = utilityData.data.content;
+							} else if (utilityData.data && utilityData.data.render && typeof utilityData.data.render === 'function') {
+								try {
+									const rendered = utilityData.data.render();
+									if (rendered && typeof rendered.html === 'string') {
+										contentHtml = rendered.html;
+									}
+								} catch (e) { /* ignore */ }
+							}
+						}
+
+						if (contentHtml) {
+							// Use the pre-rendered markdown content if available
+							utilityContentDiv.innerHTML = '<div class="utility-content">' + contentHtml + '</div>';
+						} else {
+							// Fallback: try to find the inline hidden `.item-content` inside the directory listing and use that HTML.
+							try {
+								// Try a few selectors: prefer the normalized id, then the raw name, then search by project-path text.
+								const byDataUrlNormalized = document.querySelector('.directory-item[data-url=\"' + normalizedName + '\"]');
+								const byDataUrlRaw = document.querySelector('.directory-item[data-url=\"' + utilityName + '\"]');
+								let directoryItem = byDataUrlNormalized || byDataUrlRaw;
+
+								if (!directoryItem) {
+									// Try to match by project-path text content containing the normalized name
+									const allItems = Array.from(document.querySelectorAll('.directory-item'));
+									directoryItem = allItems.find(i => {
+										const pathEl = i.querySelector('.project-path');
+										return pathEl && pathEl.textContent && pathEl.textContent.includes(normalizedName);
+									});
+								}
+
+								if (directoryItem) {
+									const inline = directoryItem.querySelector('.item-content');
+									if (inline && inline.innerHTML && inline.innerHTML.trim()) {
+										utilityContentDiv.innerHTML = '<div class=\"utility-content\">' + inline.innerHTML + '</div>';
+									} else {
+										utilityContentDiv.innerHTML = '<div class=\"terminal-line\">Error: Could not load utility content for ' + normalizedName + '</div>';
+									}
+								} else {
+									utilityContentDiv.innerHTML = '<div class=\"terminal-line\">Error: Could not load utility content for ' + normalizedName + '</div>';
+								}
+							} catch (e) {
+								utilityContentDiv.innerHTML = '<div class=\"terminal-line\">Error: Could not load utility content for ' + normalizedName + '</div>';
+							}
+						}
+					} catch (error) {
+						utilityContentDiv.innerHTML = '<div class=\"terminal-line\">Error loading utility: ' + normalizedName + '</div>';
+					}
+				}
+
+				// Get utility content directly
+				function getUtilityContent(utilityName) {
+					// Utility content will be loaded dynamically
+					return '<div class="terminal-line">Loading ' + utilityName + '...</div>';
+				}
+
+				// Go back to directory view
+				function goBackToDirectory() {
+					const directoryView = document.getElementById('directory-view');
+					const utilityView = document.getElementById('utility-view');
+
+					directoryView.style.display = 'block';
+					utilityView.classList.remove('active');
+					currentUtility = null;
+				}
+
+				// Command input handler
+				terminalInput.addEventListener('keydown', function(e) {
+					if (e.key === 'Enter') {
+						e.preventDefault(); // Prevent any default behavior
+						const command = terminalInput.value;
+						if (command.trim()) {
+							// Update prompt with current directory
+							const promptDir = currentDirectory === '~' ? '~' : currentDirectory;
+							terminalOutput.innerHTML += '<div class="terminal-line"><span class="terminal-command">[rootHytx@github.io: ' + promptDir + ']$ ' + command + '</span></div>';
+							executeCommand(command);
+							terminalInput.value = '';
+						}
 					}
 				});
 
-				if (e.key === 'ArrowDown') {
-					e.preventDefault();
-					const nextIndex = (currentIndex + 1) % items.length;
-					items.forEach(item => item.style.color = '');
-					items[nextIndex].style.color = '#ffffff';
-				} else if (e.key === 'ArrowUp') {
-					e.preventDefault();
-					const prevIndex = currentIndex <= 0 ? items.length - 1 : currentIndex - 1;
-					items.forEach(item => item.style.color = '');
-					items[prevIndex].style.color = '#ffffff';
-				} else if (e.key === 'Enter' && currentIndex >= 0) {
-					items[currentIndex].click();
-				}
-			});
+				// ESC key handler
+				document.addEventListener('keydown', function(e) {
+					if (e.key === 'Escape') {
+						if (currentUtility && !isInputFocused) {
+							// If viewing a utility and input not focused, go back to directory
+							goBackToDirectory();
+						} else {
+							// Otherwise toggle input focus
+							toggleInputFocus();
+						}
+					}
+				});
 
-			// Focus first item by default
-			document.addEventListener('DOMContentLoaded', () => {
+				// Initialize with input focused
+				terminalInput.focus();
+				terminalOutput.classList.add('active');
+
+				// Show help on first load
+				if (terminalOutput.innerHTML === '') {
+					terminalOutput.innerHTML = '<div class="terminal-line">' + commands.help().replace(/\n/g, '<br>') + '</div>';
+					terminalOutput.scrollTop = terminalOutput.scrollHeight;
+				}
+
+				                // Directory item click handlers
+				                function setupDirectoryItems() {
+				                    const items = document.querySelectorAll('.directory-item');
+				                    items.forEach(function(item) {
+				                        item.addEventListener('click', function() {
+				                            const type = this.getAttribute('data-type');
+				                            const url = this.getAttribute('data-url');
+
+				                            if (type === 'project') {
+				                                window.open(url, '_blank');
+				                                return;
+				                            }
+
+				                            if (type === 'utility') {
+				                                // Prefer inline pre-rendered HTML embedded in the DOM
+				                                const inline = this.querySelector('.item-content');
+				                                const directoryView = document.getElementById('directory-view');
+				                                const utilityView = document.getElementById('utility-view');
+				                                const utilityContentDiv = document.getElementById('utility-content');
+
+				                                if (inline && inline.innerHTML && inline.innerHTML.trim()) {
+				                                    // Show utility view using the inline HTML
+				                                    directoryView.style.display = 'none';
+				                                    utilityView.classList.add('active');
+				                                    utilityContentDiv.innerHTML = '<div class="utility-content">' + inline.innerHTML + '</div>';
+				                                    currentUtility = url;
+				                                } else {
+				                                    // Fallback to existing loader when inline content isn't available
+				                                    loadUtility(url);
+				                                }
+				                            }
+				                        });
+				                    });
+				                }
+
+				// Back button handler
+				document.getElementById('back-button').addEventListener('click', goBackToDirectory);
+
+				// Keyboard navigation for directory mode
+				document.addEventListener('keydown', function(e) {
+					if (isInputFocused) return;
+
+					const items = document.querySelectorAll('.directory-item');
+					let currentIndex = -1;
+
+					// Find current focused item
+					items.forEach(function(item, index) {
+						if (item.classList.contains('selected')) {
+							currentIndex = index;
+						}
+					});
+
+					if (e.key === 'ArrowDown') {
+						e.preventDefault();
+						const nextIndex = (currentIndex + 1) % items.length;
+						items.forEach(function(item) { item.classList.remove('selected'); });
+						items[nextIndex].classList.add('selected');
+					} else if (e.key === 'ArrowUp') {
+						e.preventDefault();
+						const prevIndex = currentIndex <= 0 ? items.length - 1 : currentIndex - 1;
+						items.forEach(function(item) { item.classList.remove('selected'); });
+						items[prevIndex].classList.add('selected');
+					} else if (e.key === 'Enter' && currentIndex >= 0) {
+						items[currentIndex].click();
+					} else if (e.key === 'Backspace' && currentUtility) {
+						// Backspace to go back when viewing utility
+						goBackToDirectory();
+					}
+				});
+
+				// Auto-focus terminal input and setup directory items
+				terminalInput.focus();
+				setupDirectoryItems();
+
+				// Focus first item by default
 				const firstItem = document.querySelector('.directory-item');
 				if (firstItem) {
-					firstItem.style.color = '#ffffff';
+					firstItem.classList.add('selected');
 				}
+
+				// Sync hover with selection
+				const items = document.querySelectorAll('.directory-item');
+				items.forEach(function(item) {
+					item.addEventListener('mouseenter', function() {
+						items.forEach(function(i) { i.classList.remove('selected'); });
+						item.classList.add('selected');
+					});
+				});
 			});
+
+			// Make utilities data available to client-side JavaScript
+			// Default to an empty array to avoid build-time template injection issues.
+			// The client-side code already falls back to using the inline `.item-content` HTML if this is empty.
+			window.utilitiesData = [];
 		</script>
 	</body>
 </html>

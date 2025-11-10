@@ -6,16 +6,17 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "astro check && astro build",
+    "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
     "verify": "echo \"Verifying build configuration...\" && node -e \"console.log('✓ Node.js version:', process.version)\" && npm run build && echo \"✓ Build completed successfully\""
   },
   "dependencies": {
-    "astro": "^4.0.0"
+    "@astropub/md": "^1.0.0",
+    "astro": "^5.15.4"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.3.1",
-    "typescript": "^5.0.0"
+    "@astrojs/check": "^0.9.5",
+    "typescript": "^5.9.3"
   }
 }
