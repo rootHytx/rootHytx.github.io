@@ -75,10 +75,39 @@ const serializedUtilitiesData = JSON.stringify(utilitiesData);
 				box-sizing: border-box;
 			}
 
+			@font-face {
+				font-family: 'Hack Nerd Font';
+				src: url('/fonts/HackNerdFont-Regular.ttf') format('truetype');
+				font-weight: 400;
+				font-style: normal;
+				font-display: swap;
+			}
+			@font-face {
+				font-family: 'Hack Nerd Font';
+				src: url('/fonts/HackNerdFont-Bold.ttf') format('truetype');
+				font-weight: 700;
+				font-style: normal;
+				font-display: swap;
+			}
+			@font-face {
+				font-family: 'Hack Nerd Font';
+				src: url('/fonts/HackNerdFont-Italic.ttf') format('truetype');
+				font-weight: 400;
+				font-style: italic;
+				font-display: swap;
+			}
+			@font-face {
+				font-family: 'Hack Nerd Font';
+				src: url('/fonts/HackNerdFont-BoldItalic.ttf') format('truetype');
+				font-weight: 700;
+				font-style: italic;
+				font-display: swap;
+			}
 			body {
 				background-color: #000000;
 				color: #e79cfe;
-				font-family: 'Courier New', monospace;
+				/* Use Hack Nerd Font as primary, fall back to common monospace fonts */
+				font-family: 'Hack Nerd Font', monospace;
 				font-size: 16px;
 				line-height: 1.4;
 				/* overall page uses full viewport height; layout splits into two areas using vh */
@@ -96,12 +125,12 @@ const serializedUtilitiesData = JSON.stringify(utilitiesData);
 				max-width: 800px;
 				width: 100%;
 				margin: 0 auto;
-				padding: 2vh 0 0 0;
+				padding: 2% 0 0 0;
 			}
 
 			.content-area {
 				width: 100%;
-				/* main content takes 70vh of the viewport */
+				/* main content takes 70% of the viewport */
 				height: 65vh;
 				position: relative;
 				overflow: auto;
@@ -149,7 +178,7 @@ const serializedUtilitiesData = JSON.stringify(utilitiesData);
 				width: 100%;
 				text-align: left;
 				display: none;
-				/* Fill the available area inside the content-area (70vh) */
+				/* Fill the available area inside the content-area (70%) */
 				position: absolute;
 				top: 0;
 				left: 0;
@@ -198,7 +227,7 @@ const serializedUtilitiesData = JSON.stringify(utilitiesData);
 			.utility-content h3 {
 				color: #e79cfe;
 				margin: 20px 0 10px 0;
-				font-family: 'Courier New', monospace;
+				font-family: 'Hack Nerd Font', monospace;
 			}
 
 			.utility-content h1 {
@@ -219,7 +248,7 @@ const serializedUtilitiesData = JSON.stringify(utilitiesData);
 				color: #e79cfe;
 				line-height: 1.6;
 				margin: 10px 0;
-				font-family: 'Courier New', monospace;
+				font-family: 'Hack Nerd Font', monospace;
 			}
 
 			.utility-content .code-block {
@@ -227,7 +256,7 @@ const serializedUtilitiesData = JSON.stringify(utilitiesData);
 				border: 1px solid #333;
 				padding: 15px;
 				border-radius: 4px;
-				font-family: 'Courier New', monospace;
+				font-family: 'Hack Nerd Font', monospace;
 				font-size: 14px;
 				line-height: 1.4;
 				color: #e79cfe;
@@ -245,14 +274,14 @@ const serializedUtilitiesData = JSON.stringify(utilitiesData);
 				font-weight: bold;
 				font-size: 18px;
 				margin-bottom: 10px;
-				font-family: 'Courier New', monospace;
+				font-family: 'Hack Nerd Font', monospace;
 			}
 
 			.utility-content .description {
 				color: #e79cfe;
 				line-height: 1.6;
 				margin-bottom: 15px;
-				font-family: 'Courier New', monospace;
+				font-family: 'Hack Nerd Font', monospace;
 			}
 
 			.utility-content .back-link {
@@ -290,7 +319,7 @@ const serializedUtilitiesData = JSON.stringify(utilitiesData);
 
 			.directory-path {
 				color: #e79cfe;
-				font-family: 'Courier New', monospace;
+				font-family: 'Hack Nerd Font', monospace;
 				font-size: 16px;
 				margin-bottom: 8px;
 				text-align: left;
@@ -322,8 +351,6 @@ const serializedUtilitiesData = JSON.stringify(utilitiesData);
 			}
 
 			.footer {
-				margin-top: 30px;
-				padding-top: 20px;
 				color: #666;
 				font-size: 14px;
 				text-align: center;
@@ -336,7 +363,7 @@ const serializedUtilitiesData = JSON.stringify(utilitiesData);
 				left: 0;
 				right: 0;
 				bottom: 0;
-				height: 25vh; /* reserved vertical space for the terminal */
+				height: 25%; /* reserved vertical space for the terminal */
 				display: flex;
 				flex-direction: column;
 				justify-content: space-between;
@@ -348,12 +375,12 @@ const serializedUtilitiesData = JSON.stringify(utilitiesData);
 			/* Terminal output sits above the input area inside the terminal container and scrolls independently */
 			.terminal .terminal-output {
 				position: absolute;
-				top: 10px;
-				left: 20px;
-				right: 20px;
-				bottom: 0px;
+				top: 10%;
+				left: 1%;
+				right: 1%;
+				bottom: 0%;
 				/* leave room for the input area at the bottom of the terminal */
-				max-height: calc(30vh - 90px);
+				max-height: 75%;
 				overflow-y: auto;
 				background-color: rgba(0, 0, 0, 0.8);
 				border: 1px solid #333;
@@ -384,14 +411,14 @@ const serializedUtilitiesData = JSON.stringify(utilitiesData);
 				left: 0;
 				right: 0;
 				bottom: 0;
-				height: 70px; /* fixed input area height within the terminal */
+				height: 15%; /* fixed input area height within the terminal */
 				background-color: #000000;
 				border-top: 1px solid #333;
 				padding: 12px 20px;
 				display: flex;
 				align-items: center;
 				gap: 8px;
-				font-family: 'Courier New', monospace;
+				font-family: 'Hack Nerd Font', monospace;
 				font-size: 16px;
 				box-sizing: border-box;
 			}
@@ -406,7 +433,7 @@ const serializedUtilitiesData = JSON.stringify(utilitiesData);
 				background: transparent;
 				border: none;
 				color: #bbb;
-				font-family: 'Courier New', monospace;
+				font-family: 'Hack Nerd Font', monospace;
 				font-size: 16px;
 				outline: none;
 				flex: 1;
@@ -483,15 +510,15 @@ const serializedUtilitiesData = JSON.stringify(utilitiesData);
 			</div>
 		</div>
 
-		<div class="footer">
-			<span>Press ESC to toggle keyboard input focus</span>
-		</div>
-
 		<div class="terminal">
+			<div class="footer">
+				<span>Press ESC to toggle keyboard input focus</span>
+			</div>
+
 			<div class="terminal-output" id="terminal-output"></div>
 
 			<div class="real-terminal">
-				<div class="terminal-prompt">[rootHytx@github.io: ~]$</div>
+				<div class="terminal-prompt">[rootHytx@github.io: <span id="prompt-dir">~</span>]$</div>
 				<input type="text" class="terminal-input" id="terminal-input" placeholder="Type commands here...">
 			</div>
 		</div>
@@ -555,16 +582,19 @@ Available commands:
 					cd: function(dir) {
 						if (!dir) {
 							currentDirectory = '~';
+							updatePrompt();
 							return '';
 						}
 
 						if (dir === '..' || dir === '../') {
 							currentDirectory = '~';
+							updatePrompt();
 							return '';
 						}
 
 						if (dir === 'github-projects' || dir === 'utilities') {
 							currentDirectory = dir;
+							updatePrompt();
 							return '';
 						}
 
@@ -630,6 +660,14 @@ Available commands:
 					} else {
 						terminalInput.blur();
 						terminalInput.placeholder = "Press ESC to focus input...";
+					}
+				}
+
+				// Update the visible prompt directory shown to the user
+				function updatePrompt() {
+					const promptDirEl = document.getElementById('prompt-dir');
+					if (promptDirEl) {
+						promptDirEl.textContent = currentDirectory === '~' ? '~' : currentDirectory;
 					}
 				}
 
@@ -898,6 +936,8 @@ Available commands:
 				// Auto-focus terminal input and setup directory items
 				terminalInput.focus();
 				setupDirectoryItems();
+				// make sure prompt displays current directory on load
+				updatePrompt();
 
 				// Focus first item by default
 				const firstItem = document.querySelector('.directory-item');
