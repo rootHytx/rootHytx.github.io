@@ -156,3 +156,6 @@ The way we do this is, instead of realizing the actual path on rebuild, we set e
     ...
 ```
 
+## Updating secrets
+
+Simply use `nix-shell -p sops --run "sops /etc/nixos/secrets/secrets.yaml"` to live edit the secrets, do not forget to include/exclude them from the `sops.nix` file, or the rebuild will fail.
