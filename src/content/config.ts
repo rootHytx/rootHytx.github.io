@@ -12,6 +12,7 @@ const utilities = defineCollection({
       "networking",
       "general",
       "nix",
+      "utility",
     ]),
     tags: z.array(z.string()).optional(),
     created: z.date().optional(),
