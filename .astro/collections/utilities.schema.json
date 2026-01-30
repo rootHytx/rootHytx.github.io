@@ -17,7 +17,9 @@
             "docker",
             "security",
             "networking",
-            "general"
+            "general",
+            "nix",
+            "utility"
           ]
         },
         "tags": {

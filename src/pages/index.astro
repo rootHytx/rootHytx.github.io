@@ -58,6 +58,30 @@ for (const path in modules) {
 
 // Serialize utilities data for client-side (kept for compatibility, but client uses embedded HTML)
 const serializedUtilitiesData = JSON.stringify(utilitiesData);
+
+// Generate dynamic fileSystem from utilities and projects
+const fileSystem = {
+  'github-projects': {
+    'bloccChainz': { type: 'project', url: 'https://github.com/rootHytx/bloccChainz' },
+    'github': { type: 'project', url: 'https://github.com/rootHytx' },
+    'sistemas-embutidos': { type: 'project', url: 'https://github.com/rootHytx/sistemas-embutidos' },
+    'trabalho-redes': { type: 'project', url: 'https://github.com/rootHytx/trabalho-redes' }
+  },
+  'utilities': Object.fromEntries(
+    utilitiesData.map(u => [u.id, { type: 'utility', url: u.id }])
+  )
+};
+const serializedFileSystem = JSON.stringify(fileSystem);
+
+// Create JavaScript string literals for safe injection
+const utilitiesDataJS = JSON.stringify(serializedUtilitiesData);
+const fileSystemJS = JSON.stringify(serializedFileSystem);
+
+// Create script content for raw injection
+const dataScriptContent = `
+window.utilitiesData = ${serializedUtilitiesData};
+window.fileSystem = ${serializedFileSystem};
+`;
 ---
 
 
@@ -519,29 +543,50 @@ const serializedUtilitiesData = JSON.stringify(utilitiesData);
 			// Simple command system
 			document.addEventListener('DOMContentLoaded', function() {
 				let isInputFocused = true; // Start with input focused
-				const terminalOutput = document.getElementById('terminal-output');
-				const terminalInput = document.getElementById('terminal-input');
+				const terminalOutput = document.getElementById('terminal-output') as HTMLElement | null;
+				const terminalInput = document.getElementById('terminal-input') as HTMLInputElement | null;
 				const directoryListing = document.querySelector('.directory-listing');
 				const directoryPath = document.querySelector('.directory-path');
 				const footer = document.querySelector('.footer');
 
-				// Directory structure
-				const fileSystem = {
+				// Directory structure - loaded from server-side generated data
+				let fileSystem = window.fileSystem || {
 					'github-projects': {
 						'bloccChainz': { type: 'project', url: 'https://github.com/rootHytx/bloccChainz' },
 						'github': { type: 'project', url: 'https://github.com/rootHytx' },
 						'sistemas-embutidos': { type: 'project', url: 'https://github.com/rootHytx/sistemas-embutidos' },
 						'trabalho-redes': { type: 'project', url: 'https://github.com/rootHytx/trabalho-redes' }
 					},
-					'utilities': {
-						'certificate-generation': { type: 'utility', url: 'certificate-generation' },
-						'docker-install': { type: 'utility', url: 'docker-install' },
-						'proxmox-lxc-boot': { type: 'utility', url: 'proxmox-lxc-boot' },
-						'rootless-docker': { type: 'utility', url: 'rootless-docker' },
-						'sops-nix-configuration': { type: 'utility', url: 'sops-nix-configuration' },
-						'utility-belt': { type: 'utility', url: 'utility-belt' }
-					}
+					'utilities': {}
 				};
+
+				// If fileSystem is a string (JSON), parse it
+				if (typeof fileSystem === 'string') {
+					try {
+						fileSystem = JSON.parse(fileSystem);
+					} catch (e) {
+						console.error('Failed to parse fileSystem:', e);
+					}
+				}
+
+				// If utilities is still empty, try to build from utilitiesData
+				if (fileSystem.utilities && Object.keys(fileSystem.utilities).length === 0 && window.utilitiesData) {
+					try {
+						let utilitiesData = window.utilitiesData;
+						if (typeof utilitiesData === 'string') {
+							utilitiesData = JSON.parse(utilitiesData);
+						}
+						if (Array.isArray(utilitiesData)) {
+							utilitiesData.forEach(u => {
+								if (u && u.id) {
+									fileSystem.utilities[u.id] = { type: 'utility', url: u.id };
+								}
+							});
+						}
+					} catch (e) {
+						console.error('Failed to build utilities from utilitiesData:', e);
+					}
+				}
 
 				// Utility content cache
 				const utilityContent = {};
@@ -551,7 +596,7 @@ const serializedUtilitiesData = JSON.stringify(utilitiesData);
 
 				// Command definitions
 				const commands = {
-					help: function() {
+					help: function(): string {
 						return `
 Available commands:
 - help: Show this help message
@@ -562,17 +607,15 @@ Available commands:
 - pwd: Show current directory
 						`;
 					},
-					ls: function() {
+					ls: function(): string {
 							if (currentDirectory === '~') {
-								return 'github-projects/\nutilities/';
-							} else if (currentDirectory === 'github-projects') {
-								return 'sistemas-embutidos\nbloccChainz\ntrabalho-redes\ngithub';
-							} else if (currentDirectory === 'utilities') {
-								return 'utility-belt\nproxmox-lxc-boot\ncertificate-generation\ndocker-install\nrootless-docker';
+								return Object.keys(fileSystem).map(dir => dir + '/').join('\n');
+							} else if (fileSystem[currentDirectory]) {
+								return Object.keys(fileSystem[currentDirectory]).join('\n');
 							}
 							return '';
 						},
-					cd: function(dir) {
+					cd: function(dir: string): string {
 						if (!dir) {
 							currentDirectory = '~';
 							updatePrompt();
@@ -585,28 +628,30 @@ Available commands:
 							return '';
 						}
 
-						if (dir === 'github-projects' || dir === 'utilities') {
-							currentDirectory = dir;
+						// Remove trailing slash if present
+						const dirName = dir.replace(/\/$/, '');
+						if (fileSystem[dirName]) {
+							currentDirectory = dirName;
 							updatePrompt();
 							return '';
 						}
 
 						return `cd: ${dir}: No such directory`;
 					},
-					cat: function(file) {
+					cat: function(file: string): string {
 						if (!file) {
 							return 'Usage: cat [filename]';
 						}
 
 						if (currentDirectory === 'github-projects') {
-							const project = fileSystem['github-projects'][file];
+							const project = fileSystem['github-projects'][file as keyof typeof fileSystem['github-projects']];
 							if (project) {
 								// Open the project URL
 								window.open(project.url, '_blank');
 								return `Opening ${file}...`;
 							}
 						} else if (currentDirectory === 'utilities') {
-							const utility = fileSystem['utilities'][file];
+							const utility = fileSystem['utilities'][file as keyof typeof fileSystem['utilities']];
 							if (utility) {
 								// Load utility content in-place
 								loadUtility(file);
@@ -616,23 +661,26 @@ Available commands:
 
 						return `cat: ${file}: No such file`;
 					},
-					pwd: function() {
+					pwd: function(): string {
 						return currentDirectory === '~' ? '/root' : `/root/${currentDirectory}`;
 					},
-					clear: function() {
+					clear: function(): string {
+						if (!terminalOutput) return '';
 						terminalOutput.innerHTML = '';
 						return '';
 					}
 				};
 
 				// Execute command
-				function executeCommand(input) {
+				function executeCommand(input: string) {
+					if (!terminalOutput) return;
+
 					const parts = input.trim().split(' ');
 					const command = parts[0].toLowerCase();
 					const args = parts.slice(1);
 
-					if (commands[command]) {
-						const result = commands[command](...args);
+					if (commands[command as keyof typeof commands]) {
+						const result = commands[command as keyof typeof commands](...args);
 						if (result) {
 							terminalOutput.innerHTML += '<div class="terminal-line">' + result.replace(/\n/g, '<br>') + '</div>';
 						}
@@ -643,16 +691,114 @@ Available commands:
 					terminalOutput.scrollTop = terminalOutput.scrollHeight;
 				}
 
+				// Tab completion handler
+				function handleTabCompletion(inputText: string) {
+					if (!terminalInput || !terminalOutput) return inputText;
+
+					const parts = inputText.trim().split(/\s+/);
+					const cursorPos = terminalInput.selectionStart ?? inputText.length;
+					const textBeforeCursor = inputText.substring(0, cursorPos);
+					const currentPartIndex = textBeforeCursor.trim().split(/\s+/).length - 1;
+					const isCommand = currentPartIndex === 0;
+
+					if (isCommand) {
+						// Complete command name
+						const partial = parts[0] || '';
+						const matches = Object.keys(commands).filter(cmd =>
+							cmd.startsWith(partial.toLowerCase())
+						);
+
+						if (matches.length === 1) {
+							return matches[0] + ' ';
+						} else if (matches.length > 1) {
+							// Find common prefix
+							let commonPrefix = matches[0];
+							for (let i = 1; i < matches.length; i++) {
+								while (!matches[i].startsWith(commonPrefix)) {
+									commonPrefix = commonPrefix.slice(0, -1);
+								}
+							}
+							if (commonPrefix.length > partial.length) {
+								return commonPrefix;
+							} else {
+								// Show available matches
+								terminalOutput.innerHTML += '<div class="terminal-line">' + matches.join('  ') + '</div>';
+								terminalOutput.scrollTop = terminalOutput.scrollHeight;
+								return inputText;
+							}
+						}
+					} else {
+						// Complete argument (file/directory)
+						const command = parts[0]?.toLowerCase() || '';
+						const partial = parts[currentPartIndex] || '';
+
+						let matches: string[] = [];
+						if (command === 'cd') {
+							// Directory completion
+							if (currentDirectory === '~') {
+								matches = Object.keys(fileSystem).map(dir => dir + '/').filter(dir =>
+									dir.startsWith(partial)
+								);
+							} else if (fileSystem[currentDirectory]) {
+								matches = Object.keys(fileSystem[currentDirectory]).filter(item =>
+									item.startsWith(partial)
+								);
+								// Add ../ for navigation
+								if ('../'.startsWith(partial)) {
+									matches.push('../');
+								}
+							}
+						} else if (command === 'cat' || command === 'ls') {
+							// File completion (same as directory completion for this system)
+							if (currentDirectory === '~') {
+								matches = Object.keys(fileSystem).map(dir => dir + '/').filter(file =>
+									file.startsWith(partial)
+								);
+							} else if (fileSystem[currentDirectory]) {
+								matches = Object.keys(fileSystem[currentDirectory]).filter(file =>
+									file.startsWith(partial)
+								);
+							}
+						}
+
+						// Process matches
+						if (matches.length === 1) {
+							const lastPartialIndex = textBeforeCursor.lastIndexOf(partial);
+							const completion = matches[0] + (matches[0].endsWith('/') ? '' : ' ');
+							return inputText.substring(0, lastPartialIndex) + completion + inputText.substring(cursorPos);
+						} else if (matches.length > 1) {
+							// Find common prefix
+							let commonPrefix = matches[0];
+							for (let i = 1; i < matches.length; i++) {
+								while (!matches[i].startsWith(commonPrefix)) {
+									commonPrefix = commonPrefix.slice(0, -1);
+								}
+							}
+							if (commonPrefix.length > partial.length) {
+								const lastPartialIndex = textBeforeCursor.lastIndexOf(partial);
+								return inputText.substring(0, lastPartialIndex) + commonPrefix + inputText.substring(cursorPos);
+							} else {
+								// Show available matches
+								terminalOutput.innerHTML += '<div class="terminal-line">' + matches.join('  ') + '</div>';
+								terminalOutput.scrollTop = terminalOutput.scrollHeight;
+								return inputText;
+							}
+						}
+					}
+
+					return inputText; // No matches
+				}
+
 				// Toggle input focus
 				function toggleInputFocus() {
 					isInputFocused = !isInputFocused;
 
 					if (isInputFocused) {
-						terminalInput.focus();
-						terminalInput.placeholder = "Type commands here...";
+						terminalInput!.focus();
+						terminalInput!.placeholder = "Type commands here...";
 					} else {
-						terminalInput.blur();
-						terminalInput.placeholder = "Press ESC to focus input...";
+						terminalInput!.blur();
+						terminalInput!.placeholder = "Press ESC to focus input...";
 					}
 				}
 
@@ -822,13 +968,21 @@ Available commands:
 				terminalInput.addEventListener('keydown', function(e) {
 					if (e.key === 'Enter') {
 						e.preventDefault(); // Prevent any default behavior
-						const command = terminalInput.value;
+						const command = terminalInput!.value;
 						if (command.trim()) {
 							// Update prompt with current directory
 							const promptDir = currentDirectory === '~' ? '~' : currentDirectory;
-							terminalOutput.innerHTML += '<div class="terminal-line"><span class="terminal-command">[rootHytx@github.io: ' + promptDir + ']$ ' + command + '</span></div>';
+							terminalOutput!.innerHTML += '<div class="terminal-line"><span class="terminal-command">[rootHytx@github.io: ' + promptDir + ']$ ' + command + '</span></div>';
 							executeCommand(command);
-							terminalInput.value = '';
+							terminalInput!.value = '';
+						}
+					} else if (e.key === 'Tab') {
+						e.preventDefault(); // Prevent tab from moving focus
+						const newText = handleTabCompletion(terminalInput!.value);
+						if (newText !== terminalInput!.value) {
+							terminalInput!.value = newText;
+							// Place cursor at end of completion
+							terminalInput!.selectionStart = terminalInput!.selectionEnd = newText.length;
 						}
 					}
 				});
@@ -894,10 +1048,41 @@ Available commands:
 				// Back button handler
 				document.getElementById('back-button').addEventListener('click', goBackToDirectory);
 
-				// Keyboard navigation for directory mode
+				// Keyboard navigation for directory mode and utility scrolling
 				document.addEventListener('keydown', function(e) {
 					if (isInputFocused) return;
 
+					// Check if we're viewing a utility content (utility view is active)
+					const utilityView = document.getElementById('utility-view');
+					if (utilityView && utilityView.classList.contains('active')) {
+						if (e.key === 'ArrowDown') {
+							e.preventDefault();
+							utilityView.scrollTop += 40; // Scroll down
+							return;
+						} else if (e.key === 'ArrowUp') {
+							e.preventDefault();
+							utilityView.scrollTop -= 40; // Scroll up
+							return;
+						} else if (e.key === 'PageDown') {
+							e.preventDefault();
+							utilityView.scrollTop += utilityView.clientHeight * 0.9;
+							return;
+						} else if (e.key === 'PageUp') {
+							e.preventDefault();
+							utilityView.scrollTop -= utilityView.clientHeight * 0.9;
+							return;
+						} else if (e.key === 'Home') {
+							e.preventDefault();
+							utilityView.scrollTop = 0;
+							return;
+						} else if (e.key === 'End') {
+							e.preventDefault();
+							utilityView.scrollTop = utilityView.scrollHeight;
+							return;
+						}
+					}
+
+					// If not scrolling utility content, handle directory navigation
 					const items = document.querySelectorAll('.directory-item');
 					let currentIndex = -1;
 
@@ -948,10 +1133,11 @@ Available commands:
 				});
 			});
 
-			// Make utilities data available to client-side JavaScript
-			// Default to an empty array to avoid build-time template injection issues.
-			// The client-side code already falls back to using the inline `.item-content` HTML if this is empty.
-			window.utilitiesData = [];
-		</script>
+			</script>
+
+			<script set:html={`
+			window.utilitiesData = ${serializedUtilitiesData};
+			window.fileSystem = ${serializedFileSystem};
+			`}></script>
 	</body>
 </html>

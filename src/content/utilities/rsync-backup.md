@@ -6,8 +6,29 @@ tags: ["linux", "utility", "backup", "rsync"]
 created: 2026-01-29
 ---
 
-Simply use:
+## Home Dir full backup
 
 ```bash
-sudo rsync -a --info=progress2 --exclude="lost+found" --exclude=".cache" /home/ /mnt/usbdrive-name/
+sudo rsync -a --info=progress2 --exclude="lost+found" --exclude=".cache" \
+    /home/ /mnt/usbdrive-name/
+```
+
+# General incremental file transfer
+
+## Local to Local:
+
+```bash
+rsync [OPTION]... [SRC]... DEST
+```
+
+## Local to Remote:
+
+```bash
+rsync [OPTION]... [SRC]... [USER@]HOST:DEST
+```
+
+## Remote to Local:
+
+```bash
+rsync [OPTION]... [USER@]HOST:SRC... [DEST]
 ```
