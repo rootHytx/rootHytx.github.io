@@ -285,6 +285,8 @@ window.fileSystem = ${serializedFileSystem};
 				margin: 20px 0;
 			}
 
+			/* Copy button styles are in a global <style> block below (dynamically created elements) */
+
 			.utility-content .section-title {
 				color: #e79cfe;
 				font-weight: bold;
@@ -474,6 +476,39 @@ window.fileSystem = ${serializedFileSystem};
 			}
 
 
+		</style>
+		<style is:global>
+			.code-block-wrapper {
+				position: relative;
+			}
+
+			.code-block-wrapper pre {
+				margin: 0;
+			}
+
+			.copy-btn {
+				position: absolute;
+				top: 6px;
+				right: 6px;
+				background: none;
+				border: none;
+				font-size: 16px;
+				padding: 2px;
+				cursor: pointer;
+				opacity: 0;
+				transition: opacity 0.2s ease, transform 0.15s ease;
+				z-index: 5;
+				line-height: 1;
+			}
+
+			.code-block-wrapper:hover .copy-btn {
+				opacity: 0.7;
+			}
+
+			.copy-btn:hover {
+				opacity: 1 !important;
+				transform: scale(1.15);
+			}
 		</style>
 	</head>
 	<body>
@@ -912,6 +947,7 @@ Available commands:
 						if (contentHtml) {
 							// Use the pre-rendered markdown content if available
 							utilityContentDiv.innerHTML = '<div class="utility-content">' + contentHtml + '</div>';
+							injectCopyButtons(utilityContentDiv);
 						} else {
 							// Fallback: try to find the inline hidden `.item-content` inside the directory listing and use that HTML.
 							try {
@@ -933,6 +969,7 @@ Available commands:
 									const inline = directoryItem.querySelector('.item-content');
 									if (inline && inline.innerHTML && inline.innerHTML.trim()) {
 										utilityContentDiv.innerHTML = '<div class=\"utility-content\">' + inline.innerHTML + '</div>';
+										injectCopyButtons(utilityContentDiv);
 									} else {
 										utilityContentDiv.innerHTML = '<div class=\"terminal-line\">Error: Could not load utility content for ' + normalizedName + '</div>';
 									}
@@ -946,6 +983,37 @@ Available commands:
 					} catch (error) {
 						utilityContentDiv.innerHTML = '<div class=\"terminal-line\">Error loading utility: ' + normalizedName + '</div>';
 					}
+				}
+
+				// Wrap each <pre> in a div and add a copy button overlay
+				function injectCopyButtons(container) {
+					if (!container) return;
+					const preBlocks = Array.from(container.querySelectorAll('pre'));
+					preBlocks.forEach(function(pre) {
+						// Skip if already wrapped
+						if (pre.parentElement && pre.parentElement.classList.contains('code-block-wrapper')) return;
+
+						var wrapper = document.createElement('div');
+						wrapper.className = 'code-block-wrapper';
+						pre.parentNode.insertBefore(wrapper, pre);
+						wrapper.appendChild(pre);
+
+						var btn = document.createElement('button');
+						btn.className = 'copy-btn';
+						btn.textContent = '\u{1F4CB}';
+						btn.addEventListener('click', function(e) {
+							e.stopPropagation();
+							var code = pre.querySelector('code');
+							var text = code ? code.textContent : pre.textContent;
+							navigator.clipboard.writeText(text).then(function() {
+								btn.textContent = '\u2705';
+								setTimeout(function() {
+									btn.textContent = '\u{1F4CB}';
+								}, 2000);
+							});
+						});
+						wrapper.appendChild(btn);
+					});
 				}
 
 				// Get utility content directly
@@ -1035,6 +1103,7 @@ Available commands:
 				                                    directoryView.style.display = 'none';
 				                                    utilityView.classList.add('active');
 				                                    utilityContentDiv.innerHTML = '<div class="utility-content">' + inline.innerHTML + '</div>';
+				                                    injectCopyButtons(utilityContentDiv);
 				                                    currentUtility = url;
 				                                } else {
 				                                    // Fallback to existing loader when inline content isn't available
