@@ -484,6 +484,7 @@ window.fileSystem = ${serializedFileSystem};
 
 			.code-block-wrapper pre {
 				margin: 0;
+				padding: 16px 20px !important;
 			}
 
 			.copy-btn {
@@ -508,6 +509,106 @@ window.fileSystem = ${serializedFileSystem};
 			.copy-btn:hover {
 				opacity: 1 !important;
 				transform: scale(1.15);
+			}
+
+			.code-block-wrapper.focused pre {
+				outline: 2px solid #e79cfe;
+				outline-offset: -2px;
+				border-radius: 4px;
+			}
+
+			/* Keybind cheat sheet modal */
+			.keybind-modal {
+				display: none;
+				position: fixed;
+				inset: 0;
+				z-index: 9999;
+				background: rgba(0, 0, 0, 0.85);
+				align-items: center;
+				justify-content: center;
+			}
+
+			.keybind-modal.active {
+				display: flex;
+			}
+
+			.keybind-modal-content {
+				background: #111;
+				border: 1px solid #e79cfe;
+				border-radius: 6px;
+				padding: 36px 48px !important;
+				max-width: 900px;
+				width: 92%;
+				max-height: 80vh;
+				overflow-y: auto;
+				scrollbar-width: thin;
+				scrollbar-color: #e79cfe #111;
+				font-family: 'Hack Nerd Font', monospace;
+				color: #e79cfe;
+			}
+
+			.keybind-header {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				border-bottom: 1px solid #333;
+				padding-bottom: 12px !important;
+				margin-bottom: 20px !important;
+				font-size: 18px;
+				font-weight: bold;
+			}
+
+			.keybind-close {
+				font-size: 12px;
+				font-weight: normal;
+				color: #666;
+			}
+
+			.keybind-columns {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 24px;
+			}
+
+			.keybind-section {
+				flex: 1 1 280px;
+				min-width: 250px;
+				margin-bottom: 8px !important;
+			}
+
+			.keybind-section-title {
+				font-size: 14px;
+				font-weight: bold;
+				color: #fff;
+				margin-bottom: 10px !important;
+				border-bottom: 1px solid #333;
+				padding-bottom: 6px !important;
+			}
+
+			.keybind-row {
+				display: flex;
+				align-items: center;
+				padding: 4px 0 !important;
+				font-size: 13px;
+			}
+
+			.keybind-row kbd {
+				background: #222;
+				border: 1px solid #444;
+				border-radius: 3px;
+				padding: 2px 7px !important;
+				margin-right: 4px !important;
+				font-family: 'Hack Nerd Font', monospace;
+				font-size: 12px;
+				color: #e79cfe;
+				white-space: nowrap;
+			}
+
+			.keybind-row span {
+				color: #999;
+				margin-left: auto;
+				padding-left: 16px !important;
+				white-space: nowrap;
 			}
 		</style>
 	</head>
@@ -563,7 +664,7 @@ window.fileSystem = ${serializedFileSystem};
 
 		<div class="terminal">
 			<div class="footer">
-				<span>Press ESC to toggle keyboard input focus</span>
+				<span>Press ESC to toggle input focus | Press ? for keybinds</span>
 			</div>
 
 			<div class="terminal-output" id="terminal-output"></div>
@@ -571,6 +672,50 @@ window.fileSystem = ${serializedFileSystem};
 			<div class="real-terminal">
 				<div class="terminal-prompt">[rootHytx@github.io: <span id="prompt-dir">~</span>]$</div>
 				<input type="text" class="terminal-input" id="terminal-input" placeholder="Type commands here...">
+			</div>
+		</div>
+
+		<div id="keybind-modal" class="keybind-modal">
+			<div class="keybind-modal-content">
+				<div class="keybind-header">
+					<span>Keybinds Cheat Sheet</span>
+					<span class="keybind-close">Press ? or ESC to close</span>
+				</div>
+				<div class="keybind-columns">
+					<div class="keybind-section">
+						<div class="keybind-section-title">Global</div>
+						<div class="keybind-row"><kbd>ESC</kbd><span>Toggle terminal input focus</span></div>
+						<div class="keybind-row"><kbd>?</kbd><span>Toggle this cheat sheet</span></div>
+					</div>
+					<div class="keybind-section">
+						<div class="keybind-section-title">Directory Navigation</div>
+						<div class="keybind-row"><kbd>j</kbd> <kbd>&#x2193;</kbd><span>Move selection down</span></div>
+						<div class="keybind-row"><kbd>k</kbd> <kbd>&#x2191;</kbd><span>Move selection up</span></div>
+						<div class="keybind-row"><kbd>l</kbd> <kbd>Enter</kbd><span>Open selected item</span></div>
+						<div class="keybind-row"><kbd>Backspace</kbd><span>Go back from utility</span></div>
+					</div>
+					<div class="keybind-section">
+						<div class="keybind-section-title">Utility View - Scroll</div>
+						<div class="keybind-row"><kbd>j</kbd> <kbd>&#x2193;</kbd><span>Scroll down</span></div>
+						<div class="keybind-row"><kbd>k</kbd> <kbd>&#x2191;</kbd><span>Scroll up</span></div>
+						<div class="keybind-row"><kbd>Ctrl+d</kbd><span>Half-page down</span></div>
+						<div class="keybind-row"><kbd>Ctrl+u</kbd><span>Half-page up</span></div>
+						<div class="keybind-row"><kbd>g</kbd> <kbd>Home</kbd><span>Scroll to top</span></div>
+						<div class="keybind-row"><kbd>G</kbd> <kbd>End</kbd><span>Scroll to bottom</span></div>
+						<div class="keybind-row"><kbd>PgDn</kbd> <kbd>PgUp</kbd><span>Page scroll</span></div>
+					</div>
+					<div class="keybind-section">
+						<div class="keybind-section-title">Utility View - Code Blocks</div>
+						<div class="keybind-row"><kbd>h</kbd> <kbd>&#x2190;</kbd><span>Scroll focused block left</span></div>
+						<div class="keybind-row"><kbd>l</kbd> <kbd>&#x2192;</kbd><span>Scroll focused block right</span></div>
+						<div class="keybind-row"><kbd>y</kbd><span>Yank (copy) focused block</span></div>
+					</div>
+					<div class="keybind-section">
+						<div class="keybind-section-title">Terminal</div>
+						<div class="keybind-row"><kbd>Tab</kbd><span>Autocomplete commands/files</span></div>
+						<div class="keybind-row"><kbd>Enter</kbd><span>Execute command</span></div>
+					</div>
+				</div>
 			</div>
 		</div>
 
@@ -948,6 +1093,7 @@ Available commands:
 							// Use the pre-rendered markdown content if available
 							utilityContentDiv.innerHTML = '<div class="utility-content">' + contentHtml + '</div>';
 							injectCopyButtons(utilityContentDiv);
+							updateFocusedCodeBlock();
 						} else {
 							// Fallback: try to find the inline hidden `.item-content` inside the directory listing and use that HTML.
 							try {
@@ -970,6 +1116,7 @@ Available commands:
 									if (inline && inline.innerHTML && inline.innerHTML.trim()) {
 										utilityContentDiv.innerHTML = '<div class=\"utility-content\">' + inline.innerHTML + '</div>';
 										injectCopyButtons(utilityContentDiv);
+										updateFocusedCodeBlock();
 									} else {
 										utilityContentDiv.innerHTML = '<div class=\"terminal-line\">Error: Could not load utility content for ' + normalizedName + '</div>';
 									}
@@ -1055,14 +1202,44 @@ Available commands:
 					}
 				});
 
+				// Keybind cheat sheet modal
+				const keybindModal = document.getElementById('keybind-modal');
+
+				function toggleKeybindModal() {
+					if (keybindModal) keybindModal.classList.toggle('active');
+				}
+
+				function isKeybindModalOpen() {
+					return keybindModal && keybindModal.classList.contains('active');
+				}
+
+				// ? key handler — works everywhere except when typing in terminal
+				document.addEventListener('keydown', function(e) {
+					if (e.key === '?' && !(isInputFocused && document.activeElement === terminalInput)) {
+						e.preventDefault();
+						toggleKeybindModal();
+					}
+				});
+
+				// Click outside modal content to close
+				if (keybindModal) {
+					keybindModal.addEventListener('click', function(e) {
+						if (e.target === keybindModal) {
+							keybindModal.classList.remove('active');
+						}
+					});
+				}
+
 				// ESC key handler
 				document.addEventListener('keydown', function(e) {
 					if (e.key === 'Escape') {
+						if (isKeybindModalOpen()) {
+							keybindModal.classList.remove('active');
+							return;
+						}
 						if (currentUtility && !isInputFocused) {
-							// If viewing a utility and input not focused, go back to directory
 							goBackToDirectory();
 						} else {
-							// Otherwise toggle input focus
 							toggleInputFocus();
 						}
 					}
@@ -1104,6 +1281,7 @@ Available commands:
 				                                    utilityView.classList.add('active');
 				                                    utilityContentDiv.innerHTML = '<div class="utility-content">' + inline.innerHTML + '</div>';
 				                                    injectCopyButtons(utilityContentDiv);
+				                                    updateFocusedCodeBlock();
 				                                    currentUtility = url;
 				                                } else {
 				                                    // Fallback to existing loader when inline content isn't available
@@ -1117,36 +1295,159 @@ Available commands:
 				// Back button handler
 				document.getElementById('back-button').addEventListener('click', goBackToDirectory);
 
+				// Find and highlight the topmost visible code block in the utility view
+				function updateFocusedCodeBlock() {
+					const utilityView = document.getElementById('utility-view');
+					if (!utilityView || !utilityView.classList.contains('active')) return;
+
+					var wrappers = utilityView.querySelectorAll('.code-block-wrapper');
+					if (!wrappers.length) return;
+
+					var viewRect = utilityView.getBoundingClientRect();
+					// Threshold line at 30% from top — blocks that scroll past this are considered "gone"
+					var threshold = viewRect.top + utilityView.clientHeight * 0.3;
+					var atBottom = utilityView.scrollTop + utilityView.clientHeight >= utilityView.scrollHeight - 5;
+
+					var found = null;
+
+					if (atBottom) {
+						// At bottom: pick the last visible code block
+						for (var i = wrappers.length - 1; i >= 0; i--) {
+							var rect = wrappers[i].getBoundingClientRect();
+							if (rect.bottom > viewRect.top && rect.top < viewRect.bottom) {
+								found = wrappers[i];
+								break;
+							}
+						}
+					} else {
+						// Normal: pick the first block whose bottom is still below the threshold
+						for (var i = 0; i < wrappers.length; i++) {
+							var rect = wrappers[i].getBoundingClientRect();
+							// Block must be at least partially visible
+							if (rect.bottom > viewRect.top && rect.top < viewRect.bottom) {
+								// Pick this block if its bottom hasn't scrolled past the threshold
+								if (rect.bottom > threshold) {
+									found = wrappers[i];
+									break;
+								}
+							}
+						}
+						// Fallback: if all blocks are above threshold, pick the last visible one
+						if (!found) {
+							for (var i = wrappers.length - 1; i >= 0; i--) {
+								var rect = wrappers[i].getBoundingClientRect();
+								if (rect.bottom > viewRect.top && rect.top < viewRect.bottom) {
+									found = wrappers[i];
+									break;
+								}
+							}
+						}
+					}
+
+					wrappers.forEach(function(w) { w.classList.remove('focused'); });
+					if (found) found.classList.add('focused');
+				}
+
+				// Listen for scroll on the utility view to update focused block
+				(function() {
+					var utilityView = document.getElementById('utility-view');
+					if (utilityView) {
+						utilityView.addEventListener('scroll', updateFocusedCodeBlock);
+					}
+				})();
+
 				// Keyboard navigation for directory mode and utility scrolling
 				document.addEventListener('keydown', function(e) {
 					if (isInputFocused) return;
+					if (isKeybindModalOpen()) return;
 
 					// Check if we're viewing a utility content (utility view is active)
 					const utilityView = document.getElementById('utility-view');
 					if (utilityView && utilityView.classList.contains('active')) {
-						if (e.key === 'ArrowDown') {
+						var focused = utilityView.querySelector('.code-block-wrapper.focused pre');
+						var scrollAmount = 40;
+
+						// Horizontal scroll of focused code block: ArrowLeft/ArrowRight/h/l
+						if (focused && (e.key === 'ArrowLeft' || e.key === 'h')) {
 							e.preventDefault();
-							utilityView.scrollTop += 40; // Scroll down
+							focused.scrollLeft -= scrollAmount;
 							return;
-						} else if (e.key === 'ArrowUp') {
+						} else if (focused && (e.key === 'ArrowRight' || e.key === 'l')) {
 							e.preventDefault();
-							utilityView.scrollTop -= 40; // Scroll up
+							focused.scrollLeft += scrollAmount;
+							return;
+						}
+
+						// Yank (copy) focused code block: y
+						if (focused && e.key === 'y') {
+							e.preventDefault();
+							var code = focused.querySelector('code');
+							var text = code ? code.textContent : focused.textContent;
+							var btn = focused.parentElement.querySelector('.copy-btn');
+							navigator.clipboard.writeText(text).then(function() {
+								if (btn) {
+									btn.textContent = '\u2705';
+									btn.style.opacity = '1';
+									setTimeout(function() {
+										btn.textContent = '\u{1F4CB}';
+										btn.style.opacity = '';
+									}, 2000);
+								}
+							});
+							return;
+						}
+
+						// Vertical scroll: ArrowDown/j
+						if (e.key === 'ArrowDown' || e.key === 'j') {
+							e.preventDefault();
+							utilityView.scrollTop += scrollAmount;
+							updateFocusedCodeBlock();
+							return;
+						// Vertical scroll: ArrowUp/k
+						} else if (e.key === 'ArrowUp' || e.key === 'k') {
+							e.preventDefault();
+							utilityView.scrollTop -= scrollAmount;
+							updateFocusedCodeBlock();
+							return;
+						// Half-page down: Ctrl+d
+						} else if (e.key === 'd' && e.ctrlKey) {
+							e.preventDefault();
+							utilityView.scrollTop += utilityView.clientHeight * 0.5;
+							updateFocusedCodeBlock();
+							return;
+						// Half-page up: Ctrl+u
+						} else if (e.key === 'u' && e.ctrlKey) {
+							e.preventDefault();
+							utilityView.scrollTop -= utilityView.clientHeight * 0.5;
+							updateFocusedCodeBlock();
 							return;
 						} else if (e.key === 'PageDown') {
 							e.preventDefault();
 							utilityView.scrollTop += utilityView.clientHeight * 0.9;
+							updateFocusedCodeBlock();
 							return;
 						} else if (e.key === 'PageUp') {
 							e.preventDefault();
 							utilityView.scrollTop -= utilityView.clientHeight * 0.9;
+							updateFocusedCodeBlock();
 							return;
+						// Top of page: Home/gg (g is handled as single key for simplicity -> Home)
 						} else if (e.key === 'Home') {
 							e.preventDefault();
 							utilityView.scrollTop = 0;
+							updateFocusedCodeBlock();
 							return;
-						} else if (e.key === 'End') {
+						// Bottom of page: End/G
+						} else if (e.key === 'End' || (e.key === 'G' && !e.ctrlKey)) {
 							e.preventDefault();
 							utilityView.scrollTop = utilityView.scrollHeight;
+							updateFocusedCodeBlock();
+							return;
+						// Top of page: g (double-tap gg handled simply as single g for usability)
+						} else if (e.key === 'g' && !e.ctrlKey) {
+							e.preventDefault();
+							utilityView.scrollTop = 0;
+							updateFocusedCodeBlock();
 							return;
 						}
 					}
@@ -1162,20 +1463,19 @@ Available commands:
 						}
 					});
 
-					if (e.key === 'ArrowDown') {
+					if (e.key === 'ArrowDown' || e.key === 'j') {
 						e.preventDefault();
 						const nextIndex = (currentIndex + 1) % items.length;
 						items.forEach(function(item) { item.classList.remove('selected'); });
 						items[nextIndex].classList.add('selected');
-					} else if (e.key === 'ArrowUp') {
+					} else if (e.key === 'ArrowUp' || e.key === 'k') {
 						e.preventDefault();
 						const prevIndex = currentIndex <= 0 ? items.length - 1 : currentIndex - 1;
 						items.forEach(function(item) { item.classList.remove('selected'); });
 						items[prevIndex].classList.add('selected');
-					} else if (e.key === 'Enter' && currentIndex >= 0) {
+					} else if ((e.key === 'Enter' || e.key === 'l') && currentIndex >= 0) {
 						items[currentIndex].click();
 					} else if (e.key === 'Backspace' && currentUtility) {
-						// Backspace to go back when viewing utility
 						goBackToDirectory();
 					}
 				});
