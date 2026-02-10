@@ -1,10 +1,5 @@
 ---
-import { getCollection } from 'astro:content';
-import { Markdown } from '@astropub/md'
-// Page metadata
-
-// Load utilities markdown modules directly and extract rendered HTML for inline embedding.
-// We use import.meta.glob with eager:true so the markdown modules are available at build time.
+// Load utilities markdown modules and extract rendered HTML for inline embedding.
 const modules = import.meta.glob('../content/utilities/*.md', { eager: true });
 const utilitiesData = [];
 
@@ -14,18 +9,12 @@ for (const path in modules) {
 	const id = fileName.replace(/\.md$/i, '');
 	let content = '';
 
-	// Try common ways markdown import exposes compiled HTML:
-	// 1) compiledContent() function (some setups)
 	if (mod && typeof mod.compiledContent === 'function') {
 		try { content = await mod.compiledContent(); } catch (e) { /* ignore */ }
 	}
-
-	// 2) compiled string export
 	if (!content && typeof mod.compiled === 'string') {
 		content = mod.compiled;
 	}
-
-	// 3) module-level render() returning { html } (some Astro setups)
 	if (!content && mod && typeof mod.render === 'function') {
 		try {
 			const r = await mod.render();
@@ -33,33 +22,16 @@ for (const path in modules) {
 		} catch (e) { /* ignore */ }
 	}
 
-	// 4) default component with render() (fallback)
-	if (!content && mod && mod.default && typeof mod.default.render === 'function') {
-		try {
-			const r = await mod.default.render();
-			if (r && typeof r.html === 'string') content = r.html;
-		} catch (e) { /* ignore */ }
-	}
-
-	// 5) fallback to rawContent / raw export if available
-	if (!content && typeof mod.rawContent === 'string') {
-		content = mod.rawContent;
-	}
-
-	// Push normalized entry
 	utilitiesData.push({
 		id,
-		title: (mod && mod.frontmatter && mod.frontmatter.title) || id,
-		description: (mod && mod.frontmatter && mod.frontmatter.description) || '',
-		category: (mod && mod.frontmatter && mod.frontmatter.category) || '',
+		title: (mod?.frontmatter?.title) || id,
+		description: (mod?.frontmatter?.description) || '',
+		category: (mod?.frontmatter?.category) || '',
 		content
 	});
 }
 
-// Serialize utilities data for client-side (kept for compatibility, but client uses embedded HTML)
-const serializedUtilitiesData = JSON.stringify(utilitiesData);
-
-// Generate dynamic fileSystem from utilities and projects
+// Generate dynamic fileSystem for client-side terminal commands
 const fileSystem = {
   'github-projects': {
     'bloccChainz': { type: 'project', url: 'https://github.com/rootHytx/bloccChainz' },
@@ -72,16 +44,6 @@ const fileSystem = {
   )
 };
 const serializedFileSystem = JSON.stringify(fileSystem);
-
-// Create JavaScript string literals for safe injection
-const utilitiesDataJS = JSON.stringify(serializedUtilitiesData);
-const fileSystemJS = JSON.stringify(serializedFileSystem);
-
-// Create script content for raw injection
-const dataScriptContent = `
-window.utilitiesData = ${serializedUtilitiesData};
-window.fileSystem = ${serializedFileSystem};
-`;
 ---
 
 
@@ -91,6 +53,15 @@ window.fileSystem = ${serializedFileSystem};
 		<meta charset="utf-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta name="description" content="rootHytx - Terminal-style cybersecurity portfolio with utilities, projects, and tools." />
+		<meta name="author" content="rootHytx" />
+		<meta property="og:title" content="root/hytx" />
+		<meta property="og:description" content="Terminal-style cybersecurity portfolio with utilities, projects, and tools." />
+		<meta property="og:type" content="website" />
+		<meta property="og:url" content="https://roothytx.github.io/" />
+		<meta name="twitter:card" content="summary" />
+		<meta name="twitter:title" content="root/hytx" />
+		<meta name="twitter:description" content="Terminal-style cybersecurity portfolio with utilities, projects, and tools." />
 		<title>root/hytx</title>
 		<style>
 			* {
@@ -99,32 +70,30 @@ window.fileSystem = ${serializedFileSystem};
 				box-sizing: border-box;
 			}
 
+			.sr-only {
+				position: absolute;
+				width: 1px;
+				height: 1px;
+				padding: 0;
+				margin: -1px;
+				overflow: hidden;
+				clip: rect(0, 0, 0, 0);
+				white-space: nowrap;
+				border: 0;
+			}
+
 			@font-face {
 				font-family: 'Hack Nerd Font';
-				src: url('/fonts/HackNerdFont-Regular.ttf') format('truetype');
+				src: url('/fonts/HackNerdFont-Regular.woff2') format('woff2');
 				font-weight: 400;
 				font-style: normal;
 				font-display: swap;
 			}
 			@font-face {
 				font-family: 'Hack Nerd Font';
-				src: url('/fonts/HackNerdFont-Bold.ttf') format('truetype');
+				src: url('/fonts/HackNerdFont-Bold.woff2') format('woff2');
 				font-weight: 700;
 				font-style: normal;
-				font-display: swap;
-			}
-			@font-face {
-				font-family: 'Hack Nerd Font';
-				src: url('/fonts/HackNerdFont-Italic.ttf') format('truetype');
-				font-weight: 400;
-				font-style: italic;
-				font-display: swap;
-			}
-			@font-face {
-				font-family: 'Hack Nerd Font';
-				src: url('/fonts/HackNerdFont-BoldItalic.ttf') format('truetype');
-				font-weight: 700;
-				font-style: italic;
 				font-display: swap;
 			}
 			body {
@@ -238,86 +207,7 @@ window.fileSystem = ${serializedFileSystem};
 				padding: 20px;
 			}
 
-			.utility-content h1,
-			.utility-content h2,
-			.utility-content h3 {
-				color: #e79cfe;
-				margin: 20px 0 10px 0;
-				font-family: 'Hack Nerd Font', monospace;
-			}
-
-			.utility-content h1 {
-				font-size: 24px;
-				border-bottom: 1px solid #333;
-				padding-bottom: 10px;
-			}
-
-			.utility-content h2 {
-				font-size: 20px;
-			}
-
-			.utility-content h3 {
-				font-size: 18px;
-			}
-
-			.utility-content p {
-				color: #e79cfe;
-				line-height: 1.6;
-				margin: 10px 0;
-				font-family: 'Hack Nerd Font', monospace;
-			}
-
-			.utility-content .code-block {
-				background-color: #1a1a1a;
-				border: 1px solid #333;
-				padding: 15px;
-				border-radius: 4px;
-				font-family: 'Hack Nerd Font', monospace;
-				font-size: 14px;
-				line-height: 1.4;
-				color: #e79cfe;
-				overflow-x: auto;
-				margin: 15px 0;
-				white-space: pre-wrap;
-			}
-
-			.utility-content .section {
-				margin: 20px 0;
-			}
-
-			/* Copy button styles are in a global <style> block below (dynamically created elements) */
-
-			.utility-content .section-title {
-				color: #e79cfe;
-				font-weight: bold;
-				font-size: 18px;
-				margin-bottom: 10px;
-				font-family: 'Hack Nerd Font', monospace;
-			}
-
-			.utility-content .description {
-				color: #e79cfe;
-				line-height: 1.6;
-				margin-bottom: 15px;
-				font-family: 'Hack Nerd Font', monospace;
-			}
-
-			.utility-content .back-link {
-				color: #e79cfe;
-				text-decoration: none;
-				border-bottom: 1px solid #e79cfe;
-				padding-bottom: 2px;
-				transition: color 0.2s ease;
-				margin-top: auto;
-				width: fit-content;
-				display: inline-block;
-				margin-bottom: 20px;
-			}
-
-			.utility-content .back-link:hover {
-				color: #ffffff;
-				border-bottom-color: #ffffff;
-			}
+			/* Utility content descendant styles are in <style is:global> below */
 
 			.back-button {
 				color: #e79cfe;
@@ -364,9 +254,6 @@ window.fileSystem = ${serializedFileSystem};
 				font-family: monospace;
 			}
 
-			.project-name {
-				color: #e79cfe;
-			}
 
 			.footer {
 				color: #666;
@@ -475,6 +362,62 @@ window.fileSystem = ${serializedFileSystem};
 				color: #00ff00;
 			}
 
+			@media (max-width: 768px) {
+				.content {
+					max-width: 100%;
+					padding: 2% 8px 0 8px;
+				}
+
+				.header {
+					margin-bottom: 16px;
+				}
+
+				.username {
+					font-size: 20px;
+				}
+
+				.content-area {
+					height: 55vh;
+				}
+
+				.directory-item {
+					padding: 3px 8px;
+					font-size: 13px;
+				}
+
+				.terminal .real-terminal {
+					padding: 8px 12px;
+				}
+
+				.terminal-input,
+				.terminal-prompt {
+					font-size: 14px;
+				}
+
+				.footer {
+					font-size: 11px;
+					padding: 2px 8px;
+				}
+			}
+
+			@media (max-width: 480px) {
+				.username {
+					font-size: 16px;
+				}
+
+				.content-area {
+					height: 50vh;
+				}
+
+				.directory-item {
+					font-size: 12px;
+				}
+
+				.terminal-input,
+				.terminal-prompt {
+					font-size: 13px;
+				}
+			}
 
 		</style>
 		<style is:global>
@@ -515,6 +458,71 @@ window.fileSystem = ${serializedFileSystem};
 				outline: 2px solid #e79cfe;
 				outline-offset: -2px;
 				border-radius: 4px;
+			}
+
+			/* Utility content descendant styles (must be global for dynamically injected markdown) */
+			.utility-content h1,
+			.utility-content h2,
+			.utility-content h3 {
+				color: #e79cfe;
+				margin: 20px 0 10px 0 !important;
+				font-family: 'Hack Nerd Font', monospace;
+			}
+
+			.utility-content h1 {
+				font-size: 24px;
+				border-bottom: 1px solid #333;
+				padding-bottom: 10px !important;
+			}
+
+			.utility-content h2 {
+				font-size: 20px;
+			}
+
+			.utility-content h3 {
+				font-size: 18px;
+			}
+
+			.utility-content p {
+				color: #e79cfe;
+				line-height: 1.6;
+				margin: 10px 0 !important;
+				font-family: 'Hack Nerd Font', monospace;
+			}
+
+			.utility-content .code-block {
+				background-color: #1a1a1a;
+				border: 1px solid #333;
+				padding: 15px !important;
+				border-radius: 4px;
+				font-family: 'Hack Nerd Font', monospace;
+				font-size: 14px;
+				line-height: 1.4;
+				color: #e79cfe;
+				overflow-x: auto;
+				margin: 15px 0 !important;
+				white-space: pre-wrap;
+			}
+
+			.utility-content .section {
+				margin: 20px 0 !important;
+			}
+
+			.utility-content .back-link {
+				color: #e79cfe;
+				text-decoration: none;
+				border-bottom: 1px solid #e79cfe;
+				padding-bottom: 2px !important;
+				transition: color 0.2s ease;
+				margin-top: auto;
+				width: fit-content;
+				display: inline-block;
+				margin-bottom: 20px !important;
+			}
+
+			.utility-content .back-link:hover {
+				color: #ffffff;
+				border-bottom-color: #ffffff;
 			}
 
 			/* Keybind cheat sheet modal */
@@ -610,18 +618,41 @@ window.fileSystem = ${serializedFileSystem};
 				padding-left: 16px !important;
 				white-space: nowrap;
 			}
+
+			@media (max-width: 768px) {
+				.keybind-modal-content {
+					padding: 20px 16px !important;
+					width: 96% !important;
+				}
+
+				.keybind-columns {
+					flex-direction: column !important;
+				}
+
+				.utility-content h1 {
+					font-size: 1.4em !important;
+				}
+
+				.utility-content h2 {
+					font-size: 1.1em !important;
+				}
+
+				.code-block-wrapper pre {
+					font-size: 13px !important;
+				}
+			}
 		</style>
 	</head>
 	<body>
 
-		<div class="content">
-			<div class="header">
+		<div class="content" role="application" aria-label="Terminal portfolio">
+			<div class="header" role="banner">
 				<span class="username">root/hytx</span>
 				<span class="cursor"></span>
 			</div>
 
 			<div class="content-area">
-				<div id="directory-view">
+				<div id="directory-view" role="navigation" aria-label="Directory listing">
 					<div class="directory-path">/root/github-projects</div>
 					<div class="directory-listing">
 						<div class="directory-item" data-type="project" data-url="https://github.com/rootHytx/sistemas-embutidos" data-content-length="0">
@@ -653,9 +684,9 @@ window.fileSystem = ${serializedFileSystem};
 					))}
 				</div>
 
-				<div id="utility-view" class="utility-content">
+				<div id="utility-view" class="utility-content" role="article" aria-label="Utility content">
 					<div class="utility-content-inner">
-						<div class="back-button" id="back-button">← Back to directory</div>
+						<div class="back-button" id="back-button" role="button" tabindex="0" aria-label="Back to directory listing">← Back to directory</div>
 						<div id="utility-content"></div>
 					</div>
 				</div>
@@ -667,18 +698,19 @@ window.fileSystem = ${serializedFileSystem};
 				<span>Press ESC to toggle input focus | Press ? for keybinds</span>
 			</div>
 
-			<div class="terminal-output" id="terminal-output"></div>
+			<div class="terminal-output" id="terminal-output" role="log" aria-live="polite" aria-label="Terminal output"></div>
 
 			<div class="real-terminal">
 				<div class="terminal-prompt">[rootHytx@github.io: <span id="prompt-dir">~</span>]$</div>
-				<input type="text" class="terminal-input" id="terminal-input" placeholder="Type commands here...">
+				<label for="terminal-input" class="sr-only">Terminal command input</label>
+				<input type="text" class="terminal-input" id="terminal-input" placeholder="Type commands here..." aria-label="Terminal command input" autocomplete="off">
 			</div>
 		</div>
 
-		<div id="keybind-modal" class="keybind-modal">
+		<div id="keybind-modal" class="keybind-modal" role="dialog" aria-modal="true" aria-labelledby="keybind-modal-title" aria-hidden="true">
 			<div class="keybind-modal-content">
 				<div class="keybind-header">
-					<span>Keybinds Cheat Sheet</span>
+					<span id="keybind-modal-title">Keybinds Cheat Sheet</span>
 					<span class="keybind-close">Press ? or ESC to close</span>
 				</div>
 				<div class="keybind-columns">
@@ -722,7 +754,7 @@ window.fileSystem = ${serializedFileSystem};
 		<script>
 			// Simple command system
 			document.addEventListener('DOMContentLoaded', function() {
-				let isInputFocused = true; // Start with input focused
+				let isInputFocused = false; // Start with directory navigation focused
 				const terminalOutput = document.getElementById('terminal-output') as HTMLElement | null;
 				const terminalInput = document.getElementById('terminal-input') as HTMLInputElement | null;
 				const directoryListing = document.querySelector('.directory-listing');
@@ -749,30 +781,16 @@ window.fileSystem = ${serializedFileSystem};
 					}
 				}
 
-				// If utilities is still empty, try to build from utilitiesData
-				if (fileSystem.utilities && Object.keys(fileSystem.utilities).length === 0 && window.utilitiesData) {
-					try {
-						let utilitiesData = window.utilitiesData;
-						if (typeof utilitiesData === 'string') {
-							utilitiesData = JSON.parse(utilitiesData);
-						}
-						if (Array.isArray(utilitiesData)) {
-							utilitiesData.forEach(u => {
-								if (u && u.id) {
-									fileSystem.utilities[u.id] = { type: 'utility', url: u.id };
-								}
-							});
-						}
-					} catch (e) {
-						console.error('Failed to build utilities from utilitiesData:', e);
-					}
-				}
-
-				// Utility content cache
-				const utilityContent = {};
 				let currentUtility = null;
 
 				let currentDirectory = '~';
+
+				// Escape HTML to prevent XSS in terminal output
+				function escapeHtml(str) {
+					const div = document.createElement('div');
+					div.textContent = str;
+					return div.innerHTML;
+				}
 
 				// Command definitions
 				const commands = {
@@ -816,7 +834,7 @@ Available commands:
 							return '';
 						}
 
-						return `cd: ${dir}: No such directory`;
+						return 'cd: ' + escapeHtml(dir) + ': No such directory';
 					},
 					cat: function(file: string): string {
 						if (!file) {
@@ -839,7 +857,7 @@ Available commands:
 							}
 						}
 
-						return `cat: ${file}: No such file`;
+						return 'cat: ' + escapeHtml(file) + ': No such file';
 					},
 					pwd: function(): string {
 						return currentDirectory === '~' ? '/root' : `/root/${currentDirectory}`;
@@ -865,7 +883,7 @@ Available commands:
 							terminalOutput.innerHTML += '<div class="terminal-line">' + result.replace(/\n/g, '<br>') + '</div>';
 						}
 					} else if (input.trim()) {
-						terminalOutput.innerHTML += '<div class="terminal-line">Command not found: ' + command + '. Type "help" for available commands.</div>';
+						terminalOutput.innerHTML += '<div class="terminal-line">Command not found: ' + escapeHtml(command) + '. Type "help" for available commands.</div>';
 					}
 
 					terminalOutput.scrollTop = terminalOutput.scrollHeight;
@@ -990,146 +1008,29 @@ Available commands:
 					}
 				}
 
-				// Load utility content (robust to different shapes/formats of injected utilities data)
-				async function loadUtility(utilityName) {
-					// Normalize the incoming name: strip a trailing .md if present so lookups match ids like "utility-belt"
-					let normalizedName = (utilityName || '').toString();
-					if (normalizedName.toLowerCase().endsWith('.md')) {
-						normalizedName = normalizedName.replace(/\.md$/i, '');
-					}
-
+				// Load utility content from inline .item-content elements in the DOM
+				function loadUtility(utilityName) {
+					const normalizedName = (utilityName || '').toString().replace(/\.md$/i, '');
 					currentUtility = normalizedName;
+
 					const directoryView = document.getElementById('directory-view');
 					const utilityView = document.getElementById('utility-view');
 					const utilityContentDiv = document.getElementById('utility-content');
 
-					// Switch views
 					directoryView.style.display = 'none';
 					utilityView.classList.add('active');
 
-					try {
-						// Normalize possible shapes for window.utilitiesData:
-						// - already an array of utilities
-						// - a JSON string
-						// - an object with property 'serializedUtilitiesData' that is a JSON string
-						// - an object with property 'utilities' which is an array
-						// - an object mapping ids -> utility objects
-						let utils = window.utilitiesData;
-
-						// If a JSON string was injected (double-encoded), try to parse
-						if (typeof utils === 'string') {
-							try { utils = JSON.parse(utils); } catch (e) { /* ignore parse error */ }
-						}
-
-						// If the server injected an object wrapper { serializedUtilitiesData: [...] }
-						if (utils && typeof utils === 'object' && typeof utils.serializedUtilitiesData === 'string') {
-							try { utils = JSON.parse(utils.serializedUtilitiesData); } catch (e) { /* ignore */ }
-						}
-
-						// If it's an object with .utilities array, use that
-						if (utils && typeof utils === 'object' && Array.isArray(utils.utilities)) {
-							utils = utils.utilities;
-						}
-
-						// Resolve utility entry whether utils is array or map. Accept either the normalized name
-						// or the original incoming name for maximum compatibility.
-						let utilityData = null;
-						if (Array.isArray(utils)) {
-							utilityData = utils.find(u => {
-								// common possible id/name fields
-								if (!u) return false;
-								const uId = (u.id || u.slug || (u.data && u.data.id) || '').toString();
-								return uId === normalizedName || uId === utilityName;
-							});
-						} else if (utils && typeof utils === 'object') {
-							// object keyed by id (or slug)
-							if (utils[normalizedName]) {
-								utilityData = utils[normalizedName];
-							} else if (utils[utilityName]) {
-								utilityData = utils[utilityName];
-							} else {
-								// fallback: first object value that matches id/slug
-								utilityData = Object.values(utils).find(u => {
-									if (!u) return false;
-									const uId = (u.id || u.slug || (u.data && u.data.id) || '').toString();
-									return uId === normalizedName || uId === utilityName;
-								});
-							}
-						}
-
-						// Attempt to normalize content HTML from different shapes
-						let contentHtml = null;
-						if (utilityData) {
-							// direct html/content fields
-							if (typeof utilityData.content === 'string') {
-								contentHtml = utilityData.content;
-							} else if (typeof utilityData.html === 'string') {
-								contentHtml = utilityData.html;
-							} else if (typeof utilityData.body === 'string') {
-								contentHtml = utilityData.body;
-							} else if (utilityData.render && typeof utilityData.render === 'function') {
-								// some Astro content objects provide a render() returning { html, css, ... }
-								try {
-									const rendered = utilityData.render();
-									if (rendered && typeof rendered.html === 'string') {
-										contentHtml = rendered.html;
-									}
-								} catch (e) {
-									// ignore render errors
-								}
-							} else if (utilityData.data && typeof utilityData.data.content === 'string') {
-								contentHtml = utilityData.data.content;
-							} else if (utilityData.data && utilityData.data.render && typeof utilityData.data.render === 'function') {
-								try {
-									const rendered = utilityData.data.render();
-									if (rendered && typeof rendered.html === 'string') {
-										contentHtml = rendered.html;
-									}
-								} catch (e) { /* ignore */ }
-							}
-						}
-
-						if (contentHtml) {
-							// Use the pre-rendered markdown content if available
-							utilityContentDiv.innerHTML = '<div class="utility-content">' + contentHtml + '</div>';
+					const directoryItem = document.querySelector('.directory-item[data-url="' + normalizedName + '"]');
+					if (directoryItem) {
+						const inline = directoryItem.querySelector('.item-content');
+						if (inline && inline.innerHTML && inline.innerHTML.trim()) {
+							utilityContentDiv.innerHTML = '<div class="utility-content">' + inline.innerHTML + '</div>';
 							injectCopyButtons(utilityContentDiv);
 							updateFocusedCodeBlock();
-						} else {
-							// Fallback: try to find the inline hidden `.item-content` inside the directory listing and use that HTML.
-							try {
-								// Try a few selectors: prefer the normalized id, then the raw name, then search by project-path text.
-								const byDataUrlNormalized = document.querySelector('.directory-item[data-url=\"' + normalizedName + '\"]');
-								const byDataUrlRaw = document.querySelector('.directory-item[data-url=\"' + utilityName + '\"]');
-								let directoryItem = byDataUrlNormalized || byDataUrlRaw;
-
-								if (!directoryItem) {
-									// Try to match by project-path text content containing the normalized name
-									const allItems = Array.from(document.querySelectorAll('.directory-item'));
-									directoryItem = allItems.find(i => {
-										const pathEl = i.querySelector('.project-path');
-										return pathEl && pathEl.textContent && pathEl.textContent.includes(normalizedName);
-									});
-								}
-
-								if (directoryItem) {
-									const inline = directoryItem.querySelector('.item-content');
-									if (inline && inline.innerHTML && inline.innerHTML.trim()) {
-										utilityContentDiv.innerHTML = '<div class=\"utility-content\">' + inline.innerHTML + '</div>';
-										injectCopyButtons(utilityContentDiv);
-										updateFocusedCodeBlock();
-									} else {
-										utilityContentDiv.innerHTML = '<div class=\"terminal-line\">Error: Could not load utility content for ' + normalizedName + '</div>';
-									}
-								} else {
-									utilityContentDiv.innerHTML = '<div class=\"terminal-line\">Error: Could not load utility content for ' + normalizedName + '</div>';
-								}
-							} catch (e) {
-								utilityContentDiv.innerHTML = '<div class=\"terminal-line\">Error: Could not load utility content for ' + normalizedName + '</div>';
-							}
+							return;
 						}
-					} catch (error) {
-						utilityContentDiv.innerHTML = '<div class=\"terminal-line\">Error loading utility: ' + normalizedName + '</div>';
 					}
+					utilityContentDiv.innerHTML = '<div class="terminal-line">Error: Could not load utility content for ' + escapeHtml(normalizedName) + '</div>';
 				}
 
 				// Wrap each <pre> in a div and add a copy button overlay
@@ -1140,18 +1041,18 @@ Available commands:
 						// Skip if already wrapped
 						if (pre.parentElement && pre.parentElement.classList.contains('code-block-wrapper')) return;
 
-						var wrapper = document.createElement('div');
+						const wrapper = document.createElement('div');
 						wrapper.className = 'code-block-wrapper';
 						pre.parentNode.insertBefore(wrapper, pre);
 						wrapper.appendChild(pre);
 
-						var btn = document.createElement('button');
+						const btn = document.createElement('button');
 						btn.className = 'copy-btn';
 						btn.textContent = '\u{1F4CB}';
 						btn.addEventListener('click', function(e) {
 							e.stopPropagation();
-							var code = pre.querySelector('code');
-							var text = code ? code.textContent : pre.textContent;
+							const code = pre.querySelector('code');
+							const text = code ? code.textContent : pre.textContent;
 							navigator.clipboard.writeText(text).then(function() {
 								btn.textContent = '\u2705';
 								setTimeout(function() {
@@ -1161,12 +1062,6 @@ Available commands:
 						});
 						wrapper.appendChild(btn);
 					});
-				}
-
-				// Get utility content directly
-				function getUtilityContent(utilityName) {
-					// Utility content will be loaded dynamically
-					return '<div class="terminal-line">Loading ' + utilityName + '...</div>';
 				}
 
 				// Go back to directory view
@@ -1187,7 +1082,7 @@ Available commands:
 						if (command.trim()) {
 							// Update prompt with current directory
 							const promptDir = currentDirectory === '~' ? '~' : currentDirectory;
-							terminalOutput!.innerHTML += '<div class="terminal-line"><span class="terminal-command">[rootHytx@github.io: ' + promptDir + ']$ ' + command + '</span></div>';
+							terminalOutput!.innerHTML += '<div class="terminal-line"><span class="terminal-command">[rootHytx@github.io: ' + escapeHtml(promptDir) + ']$ ' + escapeHtml(command) + '</span></div>';
 							executeCommand(command);
 							terminalInput!.value = '';
 						}
@@ -1206,7 +1101,9 @@ Available commands:
 				const keybindModal = document.getElementById('keybind-modal');
 
 				function toggleKeybindModal() {
-					if (keybindModal) keybindModal.classList.toggle('active');
+					if (!keybindModal) return;
+					keybindModal.classList.toggle('active');
+					keybindModal.setAttribute('aria-hidden', String(!keybindModal.classList.contains('active')));
 				}
 
 				function isKeybindModalOpen() {
@@ -1226,6 +1123,7 @@ Available commands:
 					keybindModal.addEventListener('click', function(e) {
 						if (e.target === keybindModal) {
 							keybindModal.classList.remove('active');
+							keybindModal.setAttribute('aria-hidden', 'true');
 						}
 					});
 				}
@@ -1235,9 +1133,10 @@ Available commands:
 					if (e.key === 'Escape') {
 						if (isKeybindModalOpen()) {
 							keybindModal.classList.remove('active');
+							keybindModal.setAttribute('aria-hidden', 'true');
 							return;
 						}
-						if (currentUtility && !isInputFocused) {
+						if (currentUtility) {
 							goBackToDirectory();
 						} else {
 							toggleInputFocus();
@@ -1245,8 +1144,9 @@ Available commands:
 					}
 				});
 
-				// Initialize with input focused
-				terminalInput.focus();
+				// Initialize with directory navigation focused
+				terminalInput.blur();
+				terminalInput.placeholder = "Press ESC to focus input...";
 				terminalOutput.classList.add('active');
 
 				// Show help on first load
@@ -1255,42 +1155,39 @@ Available commands:
 					terminalOutput.scrollTop = terminalOutput.scrollHeight;
 				}
 
-				                // Directory item click handlers
-				                function setupDirectoryItems() {
-				                    const items = document.querySelectorAll('.directory-item');
-				                    items.forEach(function(item) {
-				                        item.addEventListener('click', function() {
-				                            const type = this.getAttribute('data-type');
-				                            const url = this.getAttribute('data-url');
+				// Directory item click handlers
+				function setupDirectoryItems() {
+					const items = document.querySelectorAll('.directory-item');
+					items.forEach(function(item) {
+						item.addEventListener('click', function() {
+							const type = this.getAttribute('data-type');
+							const url = this.getAttribute('data-url');
 
-				                            if (type === 'project') {
-				                                window.open(url, '_blank');
-				                                return;
-				                            }
+							if (type === 'project') {
+								window.open(url, '_blank');
+								return;
+							}
 
-				                            if (type === 'utility') {
-				                                // Prefer inline pre-rendered HTML embedded in the DOM
-				                                const inline = this.querySelector('.item-content');
-				                                const directoryView = document.getElementById('directory-view');
-				                                const utilityView = document.getElementById('utility-view');
-				                                const utilityContentDiv = document.getElementById('utility-content');
+							if (type === 'utility') {
+								const inline = this.querySelector('.item-content');
+								const directoryView = document.getElementById('directory-view');
+								const utilityView = document.getElementById('utility-view');
+								const utilityContentDiv = document.getElementById('utility-content');
 
-				                                if (inline && inline.innerHTML && inline.innerHTML.trim()) {
-				                                    // Show utility view using the inline HTML
-				                                    directoryView.style.display = 'none';
-				                                    utilityView.classList.add('active');
-				                                    utilityContentDiv.innerHTML = '<div class="utility-content">' + inline.innerHTML + '</div>';
-				                                    injectCopyButtons(utilityContentDiv);
-				                                    updateFocusedCodeBlock();
-				                                    currentUtility = url;
-				                                } else {
-				                                    // Fallback to existing loader when inline content isn't available
-				                                    loadUtility(url);
-				                                }
-				                            }
-				                        });
-				                    });
-				                }
+								if (inline && inline.innerHTML && inline.innerHTML.trim()) {
+									directoryView.style.display = 'none';
+									utilityView.classList.add('active');
+									utilityContentDiv.innerHTML = '<div class="utility-content">' + inline.innerHTML + '</div>';
+									injectCopyButtons(utilityContentDiv);
+									updateFocusedCodeBlock();
+									currentUtility = url;
+								} else {
+									loadUtility(url);
+								}
+							}
+						});
+					});
+				}
 
 				// Back button handler
 				document.getElementById('back-button').addEventListener('click', goBackToDirectory);
@@ -1300,20 +1197,20 @@ Available commands:
 					const utilityView = document.getElementById('utility-view');
 					if (!utilityView || !utilityView.classList.contains('active')) return;
 
-					var wrappers = utilityView.querySelectorAll('.code-block-wrapper');
+					const wrappers = utilityView.querySelectorAll('.code-block-wrapper');
 					if (!wrappers.length) return;
 
-					var viewRect = utilityView.getBoundingClientRect();
+					const viewRect = utilityView.getBoundingClientRect();
 					// Threshold line at 30% from top — blocks that scroll past this are considered "gone"
-					var threshold = viewRect.top + utilityView.clientHeight * 0.3;
-					var atBottom = utilityView.scrollTop + utilityView.clientHeight >= utilityView.scrollHeight - 5;
+					const threshold = viewRect.top + utilityView.clientHeight * 0.3;
+					const atBottom = utilityView.scrollTop + utilityView.clientHeight >= utilityView.scrollHeight - 5;
 
-					var found = null;
+					let found = null;
 
 					if (atBottom) {
 						// At bottom: pick the last visible code block
-						for (var i = wrappers.length - 1; i >= 0; i--) {
-							var rect = wrappers[i].getBoundingClientRect();
+						for (let i = wrappers.length - 1; i >= 0; i--) {
+							const rect = wrappers[i].getBoundingClientRect();
 							if (rect.bottom > viewRect.top && rect.top < viewRect.bottom) {
 								found = wrappers[i];
 								break;
@@ -1321,8 +1218,8 @@ Available commands:
 						}
 					} else {
 						// Normal: pick the first block whose bottom is still below the threshold
-						for (var i = 0; i < wrappers.length; i++) {
-							var rect = wrappers[i].getBoundingClientRect();
+						for (let i = 0; i < wrappers.length; i++) {
+							const rect = wrappers[i].getBoundingClientRect();
 							// Block must be at least partially visible
 							if (rect.bottom > viewRect.top && rect.top < viewRect.bottom) {
 								// Pick this block if its bottom hasn't scrolled past the threshold
@@ -1334,8 +1231,8 @@ Available commands:
 						}
 						// Fallback: if all blocks are above threshold, pick the last visible one
 						if (!found) {
-							for (var i = wrappers.length - 1; i >= 0; i--) {
-								var rect = wrappers[i].getBoundingClientRect();
+							for (let i = wrappers.length - 1; i >= 0; i--) {
+								const rect = wrappers[i].getBoundingClientRect();
 								if (rect.bottom > viewRect.top && rect.top < viewRect.bottom) {
 									found = wrappers[i];
 									break;
@@ -1350,7 +1247,7 @@ Available commands:
 
 				// Listen for scroll on the utility view to update focused block
 				(function() {
-					var utilityView = document.getElementById('utility-view');
+					const utilityView = document.getElementById('utility-view');
 					if (utilityView) {
 						utilityView.addEventListener('scroll', updateFocusedCodeBlock);
 					}
@@ -1364,8 +1261,8 @@ Available commands:
 					// Check if we're viewing a utility content (utility view is active)
 					const utilityView = document.getElementById('utility-view');
 					if (utilityView && utilityView.classList.contains('active')) {
-						var focused = utilityView.querySelector('.code-block-wrapper.focused pre');
-						var scrollAmount = 40;
+						const focused = utilityView.querySelector('.code-block-wrapper.focused pre');
+						const scrollAmount = 40;
 
 						// Horizontal scroll of focused code block: ArrowLeft/ArrowRight/h/l
 						if (focused && (e.key === 'ArrowLeft' || e.key === 'h')) {
@@ -1381,9 +1278,9 @@ Available commands:
 						// Yank (copy) focused code block: y
 						if (focused && e.key === 'y') {
 							e.preventDefault();
-							var code = focused.querySelector('code');
-							var text = code ? code.textContent : focused.textContent;
-							var btn = focused.parentElement.querySelector('.copy-btn');
+							const code = focused.querySelector('code');
+							const text = code ? code.textContent : focused.textContent;
+							const btn = focused.parentElement.querySelector('.copy-btn');
 							navigator.clipboard.writeText(text).then(function() {
 								if (btn) {
 									btn.textContent = '\u2705';
@@ -1480,8 +1377,8 @@ Available commands:
 					}
 				});
 
-				// Auto-focus terminal input and setup directory items
-				terminalInput.focus();
+				// Setup directory items (input stays blurred by default)
+				terminalInput.blur();
 				setupDirectoryItems();
 				// make sure prompt displays current directory on load
 				updatePrompt();
@@ -1505,7 +1402,6 @@ Available commands:
 			</script>
 
 			<script set:html={`
-			window.utilitiesData = ${serializedUtilitiesData};
 			window.fileSystem = ${serializedFileSystem};
 			`}></script>
 	</body>

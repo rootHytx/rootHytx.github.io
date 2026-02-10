@@ -8,8 +8,7 @@ created: 2024-11-10
 
 # Utility Belt
 
-n- iffy, uh, blicky got the stiffy, uh
-Got the blicky, uh, drum, it hold fifty, uh
+Overview of all available utilities and how to navigate them.
 
 ## Available Utilities
 
@@ -17,9 +16,13 @@ Got the blicky, uh, drum, it hold fifty, uh
 - **proxmox-lxc-boot** - Initial boot for Proxmox LXC containers
 - **docker-install** - Complete Docker installation script
 - **rootless-docker** - Secure rootless Docker setup
+- **rsync-backup** - Backup utilities using rsync
 
 ### Security & Networking
 - **certificate-generation** - SSL certificate generation with Certbot
+
+### NixOS
+- **sops-nix-configuration** - Secret management with sops-nix
 
 ## Navigation Commands
 
@@ -44,9 +47,12 @@ help
 
 ## Quick Access
 
+- **?** - Open keybinds cheat sheet
 - **ESC** - Toggle terminal input focus
+- **j/k** or **Arrow keys** - Navigate directory / scroll utilities
+- **l** or **Enter** - Open selected item
 - **Backspace** - Go back from utility view
-- **Arrow keys** - Navigate directory items
-- **Enter** - Select/activate items
+- **y** - Yank (copy) focused code block
+- **h/l** or **Arrow Left/Right** - Scroll focused code block horizontally
 
 All utilities are designed to be practical, production-ready scripts that can be used directly in your projects.
