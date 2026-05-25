@@ -1,8 +1,8 @@
 ---
-title: "Windows 11 VM Entra ID-Joined for OpenStack in Production Environment"
-description: "Spin up Windows 11 25H2 VMs that are Entra ID joined, app-provisioned, and RDP-ready with M365 credentials from first boot — without any Intune or MDM management."
+title: "Windows 11 Intune-Managed VM — Full Setup Guide"
+description: "Spin up Windows 11 25H2 VMs that are Entra ID joined, Intune-enrolled, app-provisioned, and RDP-ready with M365 credentials from first boot."
 category: "utility"
-tags: ["windows", "garbage", "virtualisation", "entra-id"]
+tags: ["windows", "garbage", "virtualisation", "entra-id", m365""]
 created: 2026-05-25
 ---
 
