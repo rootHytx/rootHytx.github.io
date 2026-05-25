@@ -165,12 +165,12 @@ const serializedFileSystem = JSON.stringify(fileSystem);
 				width: 100%;
 				text-align: left;
 				display: none;
-				/* Fill the available area inside the content-area (70%) */
-				position: absolute;
+				/* Break out of the 800px content column and cover the full viewport */
+				position: fixed;
 				top: 0;
 				left: 0;
 				right: 0;
-				bottom: 0;
+				bottom: 25%; /* leave room for the fixed terminal */
 				background-color: #000000;
 				z-index: 10;
 				overflow-y: auto;
@@ -203,10 +203,9 @@ const serializedFileSystem = JSON.stringify(fileSystem);
 			}
 
 			.utility-content-inner {
-				/* main content area inner container */
-				max-width: 960px;
-				margin: 0 auto;
-				padding: 20px;
+				width: 100%;
+				padding: 20px 40px;
+				box-sizing: border-box;
 			}
 
 			/* Utility content descendant styles are in <style is:global> below */
