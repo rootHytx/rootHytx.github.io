@@ -534,6 +534,63 @@ const serializedFileSystem = JSON.stringify(fileSystem);
 				border-bottom-color: #ffffff;
 			}
 
+			/* Tables inside utility pages */
+			.utility-content table {
+				width: 100%;
+				border-collapse: collapse;
+				margin: 16px 0 !important;
+				font-family: 'Hack Nerd Font', monospace;
+				font-size: 14px;
+				color: #e79cfe;
+				border: 1px solid #e79cfe;
+			}
+
+			.utility-content th,
+			.utility-content td {
+				padding: 8px 14px !important;
+				border: 1px solid #444;
+				text-align: left;
+				vertical-align: top;
+				line-height: 1.5;
+			}
+
+			.utility-content thead tr {
+				background-color: #1a1a1a;
+				border-bottom: 2px solid #e79cfe;
+			}
+
+			.utility-content th {
+				color: #ffffff;
+				font-weight: bold;
+				border-color: #e79cfe;
+			}
+
+			.utility-content tbody tr {
+				border-bottom: 1px solid #333;
+			}
+
+			.utility-content tbody tr:last-child {
+				border-bottom: none;
+			}
+
+			.utility-content tbody tr:hover {
+				background-color: #111;
+			}
+
+			@media (max-width: 768px) {
+				.utility-content table {
+					font-size: 12px !important;
+					display: block;
+					overflow-x: auto;
+					-webkit-overflow-scrolling: touch;
+				}
+
+				.utility-content th,
+				.utility-content td {
+					padding: 6px 10px !important;
+				}
+			}
+
 			/* Keybind cheat sheet modal */
 			.keybind-modal {
 				display: none;
