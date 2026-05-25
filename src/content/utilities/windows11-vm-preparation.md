@@ -247,7 +247,7 @@ Save as `C:\Windows\System32\Sysprep\unattend.xml`:
         <HideEULAPage>true</HideEULAPage>
         <HideOEMRegistrationScreen>true</HideOEMRegistrationScreen>
         <HideOnlineAccountScreens>false</HideOnlineAccountScreens>
-        <!-- false = show Entra ID sign-in = automatic Entra ID join -->
+        <!-- false = show AAD sign-in = automatic Entra ID join -->
         <HideWirelessSetupInOOBE>true</HideWirelessSetupInOOBE>
         <NetworkLocation>Work</NetworkLocation>
         <ProtectYourPC>1</ProtectYourPC>
@@ -274,6 +274,7 @@ Save as `C:\Windows\System32\Sysprep\unattend.xml`:
                language="neutral"
                versionScope="nonSxS">
       <ComputerName>*</ComputerName>
+      <!-- * = auto-generate unique name per VM -->
     </component>
   </settings>
 </unattend>
