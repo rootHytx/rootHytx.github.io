@@ -3,7 +3,7 @@ import markdownIntegration from "@astropub/md";
 
 // https://astro.build/config
 export default defineConfig({
-  site: "https://roothytx.github.io",
+  site: "https://hytx.pt",
   base: "/",
   outDir: "./dist",
   build: {
